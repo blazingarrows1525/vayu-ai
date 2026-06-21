@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "VAYU base",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "moduleDetection": "force",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "incremental": true,
+    "paths": {
+      "@vayu/db": ["./packages/db/src/index.ts"],
+      "@vayu/db/*": ["./packages/db/src/*"],
+      "@vayu/ui": ["./packages/ui/src/index.ts"],
+      "@vayu/ui/*": ["./packages/ui/src/*"],
+      "@vayu/editor": ["./packages/editor/src/index.ts"],
+      "@vayu/contracts": ["./packages/contracts/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules"]
+}

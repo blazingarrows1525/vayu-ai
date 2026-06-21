@@ -1,0 +1,46 @@
+[project]
+name = "vayu-ai"
+version = "0.1.0"
+description = "VAYU AI — intelligence plane (RAG + LangGraph agents)"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+    "pyjwt[crypto]>=2.10",
+    "httpx>=0.28",
+    "redis>=5.2",
+    "sqlalchemy>=2.0",
+    "asyncpg>=0.30",
+    "pgvector>=0.3",
+    "structlog>=24.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.8",
+    "mypy>=1.13",
+]
+
+# This is a deployable app, not a distributable package — don't try to build it.
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+ignore_missing_imports = true

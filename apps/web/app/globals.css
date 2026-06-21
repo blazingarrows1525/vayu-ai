@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+/* VAYU design tokens — radar / command-center palette. */
+@theme {
+  --color-vayu-bg: #070b12;
+  --color-vayu-surface: #0e1521;
+  --color-vayu-border: #1c2738;
+  --color-vayu-fg: #e6edf6;
+  --color-vayu-muted: #8aa0bd;
+  --color-vayu-accent: #38bdf8;
+  --color-vayu-accent-2: #22d3ee;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+html,
+body {
+  background-color: var(--color-vayu-bg);
+  color: var(--color-vayu-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}

@@ -1,0 +1,6 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# apps/ai is a Python service (managed by uv); it has no package.json and is
+# ignored by pnpm. It is orchestrated from the root scripts via `uv run`.

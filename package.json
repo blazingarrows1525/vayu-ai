@@ -1,0 +1,30 @@
+{
+  "name": "vayu-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VAYU AI — an AI-native workspace for writing, research, and agents. Intelligence at the speed of thought.",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "db:generate": "turbo run db:generate",
+    "db:migrate": "turbo run db:migrate",
+    "ai:dev": "uv run --directory apps/ai uvicorn app.main:app --reload --port 8787",
+    "ai:test": "uv run --directory apps/ai pytest",
+    "ai:lint": "uv run --directory apps/ai ruff check .",
+    "infra:up": "docker compose -f infra/docker/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker/docker-compose.yml down"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.3"
+  }
+}

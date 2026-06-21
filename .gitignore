@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Builds / caches
+.next/
+out/
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+
+# Python (apps/ai)
+__pycache__/
+*.py[cod]
+.venv/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Logs / OS
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Coverage / test artifacts
+coverage/
+.coverage
+htmlcov/
+
+# Next.js generated types
+next-env.d.ts
+
+# Local agent / IDE config
+.claude/
+
+# Local data
+/data/
+*.local
