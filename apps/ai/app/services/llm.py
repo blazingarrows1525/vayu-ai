@@ -88,3 +88,31 @@ class AnthropicProvider:
                 provider=self.provider,
             ),
         )
+
+    async def complete(
+        self,
+        *,
+        system: str,
+        prompt: str,
+        model: str | None = None,
+        max_tokens: int = 1024,
+    ) -> tuple[str, Usage]:
+        """Non-streaming completion (used for RAG grounding and agents)."""
+        if self._client is None:
+            raise LLMUnavailable("ANTHROPIC_API_KEY is not configured")
+        mdl = model or self._settings.default_chat_model
+        msg = await self._client.messages.create(
+            model=mdl,
+            max_tokens=max_tokens,
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = "".join(b.text for b in msg.content if b.type == "text")
+        usage = Usage(
+            input_tokens=msg.usage.input_tokens,
+            output_tokens=msg.usage.output_tokens,
+            cost_usd=estimate_cost(mdl, msg.usage.input_tokens, msg.usage.output_tokens),
+            model=mdl,
+            provider=self.provider,
+        )
+        return text, usage
