@@ -1,14 +1,18 @@
 @import "tailwindcss";
 
-/* VAYU design tokens — radar / command-center palette. */
+/* ============================================================
+   VAYU design tokens — command-center palette + neon accents
+   ============================================================ */
 @theme {
-  --color-vayu-bg: #070b12;
+  --color-vayu-bg: #060912;
   --color-vayu-surface: #0e1521;
   --color-vayu-border: #1c2738;
   --color-vayu-fg: #e6edf6;
   --color-vayu-muted: #8aa0bd;
   --color-vayu-accent: #38bdf8;
   --color-vayu-accent-2: #22d3ee;
+  --color-vayu-violet: #8b5cf6;
+  --color-vayu-pink: #f472b6;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
@@ -18,4 +22,108 @@ body {
   color: var(--color-vayu-fg);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Animated aurora field behind everything */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  z-index: -2;
+  background:
+    radial-gradient(38% 48% at 18% 22%, rgba(56, 189, 248, 0.20), transparent 70%),
+    radial-gradient(34% 44% at 82% 28%, rgba(139, 92, 246, 0.18), transparent 70%),
+    radial-gradient(46% 52% at 62% 88%, rgba(34, 211, 238, 0.16), transparent 70%),
+    radial-gradient(30% 40% at 30% 75%, rgba(244, 114, 182, 0.10), transparent 70%);
+  filter: blur(8px);
+  animation: aurora 22s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+/* Faint engineering grid */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, #000 35%, transparent 80%);
+  pointer-events: none;
+}
+
+/* ============================================================
+   Keyframes
+   ============================================================ */
+@keyframes aurora {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(2%, -2%, 0) scale(1.08); }
+  100% { transform: translate3d(-2%, 2%, 0) scale(1.04); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-18px); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 22px -6px var(--color-vayu-accent); }
+  50%      { box-shadow: 0 0 40px -2px var(--color-vayu-accent); }
+}
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   Utilities
+   ============================================================ */
+.glass {
+  background: color-mix(in oklab, var(--color-vayu-surface) 62%, transparent);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid color-mix(in oklab, var(--color-vayu-accent) 14%, transparent);
+}
+.glow { box-shadow: 0 0 28px -6px color-mix(in oklab, var(--color-vayu-accent) 70%, transparent); }
+.glow-violet { box-shadow: 0 0 28px -6px color-mix(in oklab, var(--color-vayu-violet) 70%, transparent); }
+.glow-soft { box-shadow: 0 8px 40px -12px color-mix(in oklab, var(--color-vayu-accent) 55%, transparent); }
+
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-float-slow { animation: float-slow 9s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 3.4s ease-in-out infinite; }
+.animate-spin-slow { animation: spin-slow 26s linear infinite; }
+.animate-rise { animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+.text-gradient {
+  background: linear-gradient(110deg, var(--color-vayu-accent), var(--color-vayu-violet) 55%, var(--color-vayu-accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.text-shimmer {
+  background: linear-gradient(110deg, var(--color-vayu-fg) 40%, var(--color-vayu-accent) 50%, var(--color-vayu-fg) 60%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  body::before {
+    animation: none !important;
+  }
 }

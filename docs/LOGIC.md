@@ -4,9 +4,14 @@
 > Claude Code session (or a human) understand *what* VAYU AI is, *how* it's built,
 > *why* each decision was made, and *exactly where to pick up*. Read this first.
 
-Last updated after **Phase 14**. All 14 phases are complete and committed; the build is green
-on both planes (web `next build` + `vitest`; ai `ruff` + `pytest`). Live features activate with
-Docker (DB) + provider keys.
+Last updated after **Phase 15** (floating UI overhaul). All core phases are complete and
+committed; the build is green on both planes (web `next build` + `vitest`; ai `ruff` + `pytest`).
+Live features activate with Docker (DB) + provider keys.
+
+> **UI (Phase 15):** the app now has a "command-center" visual language — animated aurora
+> background + glassmorphism + neon glow (`app/globals.css`) and a global **floating AI dock**
+> (`components/floating-dock.tsx`, mounted in the root layout) with glowing, magnifying icons
+> for every module. Pure CSS animations, no new deps. See `docs/build-log/phase-15-ui.md`.
 
 ---
 
@@ -174,6 +179,8 @@ Per-phase detail: [`docs/build-log/`](build-log/README.md).
 - **AI tables ≠ product tables.** Product schema is Drizzle (`packages/db`); AI schema is
   SQLAlchemy/Alembic (`apps/ai/app/db`). The `ai_generation` ledger is product-owned, so the
   **BFF** writes it by teeing the copilot SSE `usage` event.
+- **Shared TS packages need `@types/node`** when their `tsconfig` sets `"types": ["node"]`;
+  `packages/db` also uses `rootDir: "."` so `drizzle.config.ts` (at package root) typechecks.
 
 ---
 

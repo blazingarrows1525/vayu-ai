@@ -20,3 +20,4 @@ the big picture and resume guide.
 | 12 | DevOps / CI-CD | [phase-12.md](phase-12.md) | ✅ |
 | 13 | Testing | [phase-13.md](phase-13.md) | ✅ |
 | 14 | Documentation & polish | [phase-14.md](phase-14.md) | ✅ |
+| 15 | Floating UI overhaul | [phase-15-ui.md](phase-15-ui.md) | ✅ |
