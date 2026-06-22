@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import uuid
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 
-from fastapi import FastAPI
+import structlog
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
+from app.core.observability import setup_observability
 
 settings = get_settings()
 
@@ -28,6 +31,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+setup_observability(app, settings)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -35,6 +40,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def request_id_middleware(request: Request, call_next):
+    request_id = request.headers.get("x-request-id") or uuid.uuid4().hex
+    structlog.contextvars.bind_contextvars(request_id=request_id)
+    try:
+        response = await call_next(request)
+    finally:
+        structlog.contextvars.clear_contextvars()
+    response.headers["x-request-id"] = request_id
+    return response
+
 
 app.include_router(api_router, prefix="/v1")
 
