@@ -22,5 +22,7 @@ export const config = {
     "/research/:path*",
     "/agents/:path*",
     "/vault/:path*",
+    "/docs/:path*",
+    "/settings/:path*",
   ],
 };
