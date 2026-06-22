@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { VayuEditor } from "@vayu/editor";
+import { type Editor, VayuEditor } from "@vayu/editor";
+import { CopilotPanel } from "@/components/copilot-panel";
 
 const INITIAL = `
 <h1>VAYU Editor</h1>
@@ -15,6 +16,7 @@ const INITIAL = `
 export default function EditorDemoPage() {
   const [blocks, setBlocks] = useState<number | null>(null);
   const [editedAt, setEditedAt] = useState<string>("");
+  const [editor, setEditor] = useState<Editor | null>(null);
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
@@ -34,11 +36,16 @@ export default function EditorDemoPage() {
         <VayuEditor
           content={INITIAL}
           autofocus
+          onCreate={setEditor}
           onUpdate={(json) => {
             setBlocks(Array.isArray(json.content) ? json.content.length : 0);
             setEditedAt(new Date().toLocaleTimeString());
           }}
         />
+      </div>
+
+      <div className="mt-4">
+        <CopilotPanel editor={editor} />
       </div>
 
       <p className="mt-4 text-xs text-vayu-muted">

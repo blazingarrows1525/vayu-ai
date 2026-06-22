@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = None
     embedding_model: str = "text-embedding-3-small"
     embedding_dim: int = 1536
-    default_chat_model: str = "claude-sonnet-4-6"
+    default_chat_model: str = "claude-opus-4-8"
 
     # Object storage
     s3_endpoint: str = "http://localhost:9000"

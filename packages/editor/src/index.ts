@@ -1,3 +1,4 @@
+export type { Editor, JSONContent } from "@tiptap/core";
 export { VayuEditor, type VayuEditorProps } from "./editor";
 export {
   vayuExtensions,
