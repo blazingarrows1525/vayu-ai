@@ -1,8 +1,10 @@
 import { and, desc, eq } from "drizzle-orm";
 import {
+  aiGeneration,
   comment,
   db,
   document,
+  documentVersion,
   membership,
   mention,
   type Role,
@@ -179,4 +181,108 @@ export async function removeMember(workspaceId: string, userId: string) {
         eq(membership.userId, userId),
       ),
     );
+}
+
+/* --------------------------- versions + analytics ------------------------- */
+
+export async function createVersion(
+  documentId: string,
+  workspaceId: string,
+  userId: string,
+) {
+  const doc = await getDocument(documentId, workspaceId);
+  if (!doc) return null;
+  await db.insert(documentVersion).values({
+    documentId,
+    version: doc.currentVersion,
+    content: doc.content,
+    summary: `Snapshot v${doc.currentVersion}`,
+    createdBy: userId,
+  });
+  await db
+    .update(document)
+    .set({ currentVersion: doc.currentVersion + 1 })
+    .where(eq(document.id, documentId));
+  return { version: doc.currentVersion };
+}
+
+export async function listVersions(documentId: string) {
+  return db
+    .select({
+      version: documentVersion.version,
+      summary: documentVersion.summary,
+      createdAt: documentVersion.createdAt,
+    })
+    .from(documentVersion)
+    .where(eq(documentVersion.documentId, documentId))
+    .orderBy(desc(documentVersion.version))
+    .limit(100);
+}
+
+export async function restoreVersion(
+  documentId: string,
+  workspaceId: string,
+  version: number,
+) {
+  const [snapshot] = await db
+    .select({ content: documentVersion.content })
+    .from(documentVersion)
+    .where(
+      and(
+        eq(documentVersion.documentId, documentId),
+        eq(documentVersion.version, version),
+      ),
+    )
+    .limit(1);
+  if (!snapshot) return null;
+  await db
+    .update(document)
+    .set({ content: snapshot.content, updatedAt: new Date() })
+    .where(and(eq(document.id, documentId), eq(document.workspaceId, workspaceId)));
+  return { content: snapshot.content };
+}
+
+export async function getAnalytics(workspaceId: string) {
+  const docs = await db
+    .select({ contentText: document.contentText, updatedAt: document.updatedAt })
+    .from(document)
+    .where(
+      and(eq(document.workspaceId, workspaceId), eq(document.isArchived, false)),
+    );
+
+  let words = 0;
+  for (const d of docs) {
+    const text = (d.contentText ?? "").trim();
+    if (text) words += text.split(/\s+/).length;
+  }
+  const weekAgo = Date.now() - 7 * 86_400_000;
+  const recentlyEdited = docs.filter(
+    (d) => new Date(d.updatedAt).getTime() > weekAgo,
+  ).length;
+
+  const gens = await db
+    .select({
+      promptTokens: aiGeneration.promptTokens,
+      completionTokens: aiGeneration.completionTokens,
+      costUsd: aiGeneration.costUsd,
+    })
+    .from(aiGeneration)
+    .where(eq(aiGeneration.workspaceId, workspaceId))
+    .limit(5000);
+
+  const aiTokens = gens.reduce(
+    (n, g) => n + g.promptTokens + g.completionTokens,
+    0,
+  );
+  const aiCostUsd = Math.round(gens.reduce((n, g) => n + g.costUsd, 0) * 1e4) / 1e4;
+
+  return {
+    documents: docs.length,
+    words,
+    readingMinutes: Math.ceil(words / 200),
+    recentlyEdited,
+    aiGenerations: gens.length,
+    aiTokens,
+    aiCostUsd,
+  };
 }

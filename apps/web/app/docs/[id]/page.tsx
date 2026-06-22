@@ -24,6 +24,9 @@ export default function DocPage() {
   const [saving, setSaving] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [draft, setDraft] = useState("");
+  const [versions, setVersions] = useState<
+    { version: number; summary: string | null; createdAt: string }[]
+  >([]);
 
   function loadComments() {
     fetch(`/api/documents/${id}/comments`)
@@ -43,6 +46,7 @@ export default function DocPage() {
         setLoaded(true);
       });
     loadComments();
+    loadVersions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -82,6 +86,26 @@ export default function DocPage() {
       body: JSON.stringify({ commentId: c.id, resolved: !c.resolved }),
     });
     loadComments();
+  }
+
+  function loadVersions() {
+    fetch(`/api/documents/${id}/versions`)
+      .then((r) => (r.ok ? r.json() : { versions: [] }))
+      .then((d) => setVersions(d.versions ?? []));
+  }
+
+  async function snapshot() {
+    await fetch(`/api/documents/${id}/versions`, { method: "POST" });
+    loadVersions();
+  }
+
+  async function restore(version: number) {
+    const res = await fetch(`/api/documents/${id}/restore`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ version }),
+    });
+    if (res.ok && editor) editor.commands.setContent((await res.json()).content);
   }
 
   if (!loaded) return <main className="px-6 py-12 text-vayu-muted">Loading…</main>;
@@ -148,6 +172,32 @@ export default function DocPage() {
                 <p className={`mt-1 ${c.resolved ? "text-vayu-muted line-through" : "text-vayu-fg"}`}>
                   {c.body}
                 </p>
+              </li>
+            ))}
+          </ul>
+
+          <h2 className="mt-5 text-sm font-semibold">History</h2>
+          <button
+            onClick={snapshot}
+            className="mt-2 rounded-lg border border-vayu-border px-2 py-1 text-xs text-vayu-muted transition hover:border-vayu-accent hover:text-vayu-fg"
+          >
+            Snapshot now
+          </button>
+          <ul className="mt-2 flex flex-col gap-1">
+            {versions.map((v) => (
+              <li
+                key={v.version}
+                className="flex items-center justify-between text-xs text-vayu-muted"
+              >
+                <span>
+                  v{v.version} · {new Date(v.createdAt).toLocaleDateString()}
+                </span>
+                <button
+                  onClick={() => restore(v.version)}
+                  className="text-vayu-accent hover:underline"
+                >
+                  restore
+                </button>
               </li>
             ))}
           </ul>

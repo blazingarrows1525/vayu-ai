@@ -24,5 +24,6 @@ export const config = {
     "/vault/:path*",
     "/docs/:path*",
     "/settings/:path*",
+    "/analytics/:path*",
   ],
 };
