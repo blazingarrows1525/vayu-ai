@@ -22,7 +22,12 @@ from app.core.security import Principal, get_principal, require_workspace
 from app.db.base import get_session
 from app.db.models import KnowledgeSource
 from app.rag.parsing import detect_source_type, extract_text
-from app.rag.pipeline import answer_question, ingest_document
+from app.rag.pipeline import (
+    answer_question,
+    ingest_document,
+    related_sources,
+    semantic_search,
+)
 
 router = APIRouter()
 
@@ -31,6 +36,29 @@ class AskRequest(BaseModel):
     query: str
     source_scope: list[str] | None = None
     top_k: int = Field(default=8, ge=1, le=50)
+
+
+class SearchRequest(BaseModel):
+    query: str
+    top_k: int = Field(default=12, ge=1, le=50)
+
+
+async def _attach_titles(
+    session: AsyncSession, workspace_id: str, results: list[dict]
+) -> list[dict]:
+    ids = [uuid.UUID(r["sourceId"]) for r in results]
+    if not ids:
+        return results
+    rows = await session.execute(
+        select(KnowledgeSource.id, KnowledgeSource.title).where(
+            KnowledgeSource.id.in_(ids),
+            KnowledgeSource.workspace_id == uuid.UUID(workspace_id),
+        )
+    )
+    titles = {str(rid): title for rid, title in rows.all()}
+    for r in results:
+        r["title"] = titles.get(r["sourceId"], "Untitled")
+    return results
 
 
 def _source_json(s: KnowledgeSource) -> dict:
@@ -106,6 +134,36 @@ async def get_source(
     if source is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Knowledge source not found")
     return _source_json(source)
+
+
+@router.post("/search")
+async def search(
+    req: SearchRequest,
+    principal: Principal = Depends(get_principal),
+    session: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> dict:
+    workspace_id = require_workspace(principal)
+    results = await semantic_search(
+        session, settings, workspace_id=workspace_id, query=req.query, top_k=req.top_k
+    )
+    if results is None:
+        return {"results": [], "configured": False}
+    return {"results": await _attach_titles(session, workspace_id, results)}
+
+
+@router.get("/knowledge/{source_id}/related")
+async def related(
+    source_id: str,
+    principal: Principal = Depends(get_principal),
+    session: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> dict:
+    workspace_id = require_workspace(principal)
+    results = await related_sources(
+        session, settings, workspace_id=workspace_id, source_id=source_id, top_k=6
+    )
+    return {"related": await _attach_titles(session, workspace_id, results)}
 
 
 @router.post("/rag/ask")

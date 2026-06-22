@@ -183,3 +183,65 @@ async def answer_question(
             "used": len(rows),
         },
     )
+
+
+async def semantic_search(
+    session: AsyncSession,
+    settings: Settings,
+    *,
+    workspace_id: str,
+    query: str,
+    top_k: int,
+) -> list[dict] | None:
+    """Vault-wide semantic search, grouped by source. None = embeddings off."""
+    embedder = Embedder(settings)
+    if not embedder.available:
+        return None
+    query_vec = await embedder.embed_one(query)
+    rows = await retrieve(session, workspace_id, query_vec, top_k, None)
+
+    by_source: dict[str, dict] = {}
+    for emb, dist in rows:
+        sid = str(emb.knowledge_source_id)
+        score = round(max(0.0, 1.0 - dist), 3)
+        if sid not in by_source:
+            by_source[sid] = {
+                "sourceId": sid,
+                "score": score,
+                "snippet": emb.content[:200],
+                "hits": 1,
+            }
+        else:
+            by_source[sid]["hits"] += 1
+    return list(by_source.values())
+
+
+async def related_sources(
+    session: AsyncSession,
+    settings: Settings,
+    *,
+    workspace_id: str,
+    source_id: str,
+    top_k: int,
+) -> list[dict]:
+    """Nearest *other* sources to a given source (knowledge-graph edges)."""
+    seed = (
+        await session.execute(
+            select(Embedding)
+            .where(Embedding.knowledge_source_id == uuid.UUID(source_id))
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if seed is None:
+        return []
+
+    rows = await retrieve(session, workspace_id, list(seed.embedding), top_k + 8, None)
+    out: dict[str, dict] = {}
+    for emb, dist in rows:
+        sid = str(emb.knowledge_source_id)
+        if sid == source_id or sid in out:
+            continue
+        out[sid] = {"sourceId": sid, "score": round(max(0.0, 1.0 - dist), 3)}
+        if len(out) >= top_k:
+            break
+    return list(out.values())
