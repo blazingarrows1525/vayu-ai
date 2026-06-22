@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@vayu/db": "workspace:*",
+    "@vayu/editor": "workspace:*",
     "better-auth": "^1.6.20",
     "drizzle-orm": "^0.45.2",
     "next": "^16.2.9",

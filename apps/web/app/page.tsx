@@ -31,16 +31,16 @@ export default function Home() {
         <p className="mt-6 text-lg text-vayu-muted">{site.description}</p>
         <div className="mt-8 flex gap-4">
           <a
-            href="/docs"
+            href="/editor"
             className="rounded-lg bg-vayu-accent px-5 py-3 text-sm font-semibold text-vayu-bg transition hover:bg-vayu-accent-2"
           >
-            Enter the workspace
+            Open the editor
           </a>
           <a
-            href="https://github.com"
+            href="/login"
             className="rounded-lg border border-vayu-border px-5 py-3 text-sm font-semibold text-vayu-fg transition hover:border-vayu-accent"
           >
-            Architecture docs
+            Sign in
           </a>
         </div>
       </section>

@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Transpile the shared TS source packages from the monorepo.
-  transpilePackages: ["@vayu/db"],
+  transpilePackages: ["@vayu/db", "@vayu/editor"],
   // Typed links/routes (promoted out of `experimental` in Next 16).
   typedRoutes: true,
 };
