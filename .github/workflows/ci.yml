@@ -25,6 +25,8 @@ jobs:
           DATABASE_URL: postgresql://vayu:vayu@localhost:5432/vayu
           BETTER_AUTH_SECRET: ci-secret-0123456789abcdefghij0123
           NEXT_PUBLIC_APP_URL: http://localhost:3000
+      - name: Unit tests (vitest)
+        run: pnpm -C apps/web test
 
   ai:
     name: AI (lint + tests)
