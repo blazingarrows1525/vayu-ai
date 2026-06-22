@@ -7,7 +7,7 @@
 An AI-native workspace that fuses a **Notion-grade editor**, a **Perplexity-style research
 engine**, and a fleet of **LangGraph agents** into one product.
 
-`Next.js 16` · `React 19` · `FastAPI` · `PostgreSQL + pgvector` · `Redis` · `LangGraph` · `Better Auth`
+`Next.js 16` · `React 19` · `FastAPI` · `PostgreSQL + pgvector` · `Redis` · `LangGraph` · `Better Auth` · `OpenTelemetry`
 
 </div>
 
@@ -15,67 +15,78 @@ engine**, and a fleet of **LangGraph agents** into one product.
 
 ## What it is
 
-VAYU AI is a single surface to **write, research, reason, and remember** — built as a
-production-grade, two-plane polyglot system, not a toy. It is the reference implementation
-for an enterprise AI SaaS: streaming copilots, grounded RAG with citations, agentic
-workflows, multi-tenant RBAC, version control for documents, and full observability.
-
-## Architecture at a glance
+VAYU AI is a production-grade, **two-plane polyglot** system: a TypeScript **product plane**
+(Next.js as UI + BFF) and a Python **intelligence plane** (FastAPI for RAG + agents), sharing
+one Postgres and one Redis, bridged by a stateless JWT verified via JWKS.
 
 ```
-Browser ─▶ Next.js 16 (UI + BFF) ──Drizzle──▶ ┌ Postgres + pgvector ┐ ◀──SQLAlchemy── FastAPI (RAG, agents)
-                │  Better Auth (JWT+JWKS)       └──────── Redis ──────┘                 │  LangGraph, streaming
+Browser ─▶ Next.js 16 (UI + BFF) ──Drizzle──▶ ┌ Postgres + pgvector ┐ ◀─SQLAlchemy─ FastAPI (RAG, agents)
+                │  Better Auth (JWT + JWKS)     └──────── Redis ──────┘                │  LangGraph, streaming
                 └───────────── Bearer JWT (verified via JWKS) ─────────────────────────┘
 ```
 
-- **Product plane (TypeScript):** Next.js App Router as UI **and** BFF — auth, workspaces,
-  documents, the editor, collaboration.
-- **Intelligence plane (Python):** FastAPI — embeddings, RAG, LangGraph agents, AI streaming.
-- **Bridge:** a stateless JWT minted by Better Auth and verified by FastAPI via JWKS. Each
-  plane is independently scalable; the boundary is HTTP + JWT.
+Design docs: **[`docs/architecture`](docs/architecture/README.md)**. Build reasoning + resume
+guide: **[`docs/LOGIC.md`](docs/LOGIC.md)**. Per-phase log: **[`docs/build-log`](docs/build-log/README.md)**.
 
-Full design: **[`docs/architecture`](docs/architecture/README.md)** — overview, HLD, data
-model (ERD), API design, and folder structure.
+## Features (all 14 build phases complete)
+
+| Module | Surface | Highlights |
+|---|---|---|
+| Auth & RBAC | `/login` `/signup` `/dashboard` | Better Auth, JWT+JWKS bridge, workspace roles (owner→viewer) |
+| Editor | `/editor`, `/docs/[id]` | Tiptap: slash menu, tables, code, **math (KaTeX)**, **Mermaid**, callouts, task lists |
+| AI Copilot | editor panel · `/api/ai/copilot` | Streaming Anthropic (Opus 4.8), 12 commands, usage ledger, idempotency |
+| Research / RAG | `/research` | upload → chunk → embed (pgvector) → grounded answers + citations + confidence |
+| Agents | `/agents` | 7 LangGraph agents (plan→research→synthesize), step trace, SSE streaming |
+| Knowledge Vault | `/vault` | semantic search, related-content (graph edges), saved searches |
+| Collaboration | `/docs` `/settings/members` | documents, threaded comments + mentions, member/role management |
+| Versioning + Analytics | doc History · `/analytics` | snapshots/restore/timeline; words, reading time, AI usage |
+| Observability | — | OTel tracing both planes, structlog/pino, Sentry, request-id propagation |
+| DevOps | `infra/`, `.github/` | Dockerfiles (Next standalone + uv), CI (build/lint/test) + CD |
 
 ## Monorepo layout
 
 ```
-apps/web      Next.js 16 — UI + BFF (product plane)
-apps/ai       FastAPI — RAG + LangGraph agents (intelligence plane, managed by uv)
-packages/db   Drizzle schema + client — product-plane source of truth
-packages/*    ui · editor · contracts · config  (built out across phases)
-infra/docker  Postgres+pgvector · Redis · MinIO (one `compose up`)
-docs/         architecture & system-design deliverables
+apps/web        Next.js 16 — UI + BFF (product plane)
+apps/ai         FastAPI — RAG + LangGraph agents (intelligence plane, uv)
+packages/db     Drizzle schema (product tables) + client
+packages/editor @vayu/editor — Tiptap editor + extensions
+infra/docker    compose (Postgres+pgvector, Redis, MinIO) + Dockerfiles
+docs/           architecture, build-log, LOGIC.md
 ```
 
 ## Quickstart
 
-> Prereqs: Node ≥ 20, [pnpm](https://pnpm.io) 9, [uv](https://docs.astral.sh/uv/), and Docker
-> (for the local data tier).
+> Prereqs: Node ≥ 20, [pnpm](https://pnpm.io) 9, [uv](https://docs.astral.sh/uv/), Docker.
 
 ```bash
-# 1. Install JS deps (monorepo) and Python deps (ai plane)
 pnpm install
-uv sync --directory apps/ai
+uv --directory apps/ai sync
 
-# 2. Boot the data tier (Postgres+pgvector, Redis, MinIO)
-pnpm infra:up
+pnpm infra:up                                   # Postgres+pgvector, Redis, MinIO
+cp .env.example .env                            # fill in keys (see below)
+pnpm db:migrate                                 # product schema (Drizzle)
+uv --directory apps/ai run alembic upgrade head # AI schema (pgvector)
 
-# 3. Apply the product-plane schema
-cp .env.example .env
-pnpm db:migrate
-
-# 4. Run both planes
-pnpm dev          # Next.js  → http://localhost:3000
-pnpm ai:dev       # FastAPI  → http://localhost:8787  (docs at /docs)
+pnpm dev        # web  → http://localhost:3000
+pnpm ai:dev     # API  → http://localhost:8787  (/docs)
 ```
 
-## Build phases
+**Keys** (optional — features degrade gracefully without them): `ANTHROPIC_API_KEY` (copilot,
+agents, RAG grounding — default model `claude-opus-4-8`), `OPENAI_API_KEY` (RAG embeddings).
 
-Architecture & scaffold → setup → **auth** → **editor** → **copilot** → **RAG** →
-**agents** → knowledge vault → workspaces → versioning/analytics → observability →
-CI/CD → testing → docs. Progress is tracked phase-by-phase; each phase ships with an
-architecture rationale and interview discussion notes.
+## Verify
+
+```bash
+pnpm -C apps/web build               # typecheck + route generation
+pnpm -C apps/web test                # vitest
+uv --directory apps/ai run ruff check .
+uv --directory apps/ai run pytest -q
+```
+
+## Deploy
+
+See **[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)** — Vercel (web), Railway/ECS (AI container),
+Neon/Supabase (Postgres+pgvector), Upstash (Redis), S3/R2 (storage).
 
 ## License
 

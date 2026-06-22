@@ -4,7 +4,9 @@
 > Claude Code session (or a human) understand *what* VAYU AI is, *how* it's built,
 > *why* each decision was made, and *exactly where to pick up*. Read this first.
 
-Last updated after **Phase 7** (Agents). Phases 1–7 of 14 are complete and committed.
+Last updated after **Phase 14**. All 14 phases are complete and committed; the build is green
+on both planes (web `next build` + `vitest`; ai `ruff` + `pytest`). Live features activate with
+Docker (DB) + provider keys.
 
 ---
 
@@ -143,14 +145,14 @@ plane. **Off by default** (must never be true in prod).
 | 4 | VAYU Editor (Tiptap) | ✅ | `f217e16` |
 | 5 | AI Copilot | ✅ | `4290bd4` |
 | 6 | RAG / Research | ✅ | `aa304db` |
-| 7 | Agents (LangGraph) | ✅ | (this commit) |
-| 8 | Knowledge Vault | ⬜ | — |
-| 9 | Workspaces & collaboration | ⬜ | — |
-| 10 | Version control & analytics | ⬜ | — |
-| 11 | Observability | ⬜ | — |
-| 12 | DevOps / CI-CD | ⬜ | — |
-| 13 | Testing | ⬜ | — |
-| 14 | Documentation & polish | ⬜ | — |
+| 7 | Agents (LangGraph) | ✅ | `b880e98` |
+| 8 | Knowledge Vault | ✅ | `1417d44` |
+| 9 | Workspaces & collaboration | ✅ | `242e24f` |
+| 10 | Version control & analytics | ✅ | `7676f5c` |
+| 11 | Observability | ✅ | `d25179f` |
+| 12 | DevOps / CI-CD | ✅ | `3a65e89` |
+| 13 | Testing | ✅ | `d03c9eb` |
+| 14 | Documentation & polish | ✅ | (this commit) |
 
 Per-phase detail: [`docs/build-log/`](build-log/README.md).
 

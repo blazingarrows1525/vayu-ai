@@ -13,4 +13,10 @@ the big picture and resume guide.
 | 5 | AI Copilot | [phase-05.md](phase-05.md) | ✅ |
 | 6 | RAG / Research | [phase-06.md](phase-06.md) | ✅ |
 | 7 | Agents (LangGraph) | [phase-07.md](phase-07.md) | ✅ |
-| 8–14 | Vault → Docs | _pending_ | ⬜ |
+| 8 | Knowledge Vault | [phase-08.md](phase-08.md) | ✅ |
+| 9 | Workspaces & collaboration | [phase-09.md](phase-09.md) | ✅ |
+| 10 | Version control & analytics | [phase-10.md](phase-10.md) | ✅ |
+| 11 | Observability | [phase-11.md](phase-11.md) | ✅ |
+| 12 | DevOps / CI-CD | [phase-12.md](phase-12.md) | ✅ |
+| 13 | Testing | [phase-13.md](phase-13.md) | ✅ |
+| 14 | Documentation & polish | [phase-14.md](phase-14.md) | ✅ |
