@@ -1,0 +1,32 @@
+name: CD
+
+# Manual / tagged deploy. Builds both plane images; wire the push + deploy
+# steps to your registry and host (Vercel for web, Railway/ECS for the AI plane).
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  images:
+    name: Build images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/Dockerfile.web
+          push: false
+          tags: vayu-web:${{ github.sha }}
+      - name: Build AI image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/Dockerfile.ai
+          push: false
+          tags: vayu-ai:${{ github.sha }}
+      # - name: Push + deploy
+      #   run: echo "wire to registry + Vercel/Railway/ECS"

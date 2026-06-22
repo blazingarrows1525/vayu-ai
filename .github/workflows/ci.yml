@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  web:
+    name: Web (build + typecheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build (typechecks + route generation)
+        run: pnpm -C apps/web build
+        env:
+          DATABASE_URL: postgresql://vayu:vayu@localhost:5432/vayu
+          BETTER_AUTH_SECRET: ci-secret-0123456789abcdefghij0123
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+
+  ai:
+    name: AI (lint + tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Sync deps
+        run: uv sync --frozen
+        working-directory: apps/ai
+      - name: Lint (ruff)
+        run: uv run ruff check .
+        working-directory: apps/ai
+      - name: Tests (pytest)
+        run: uv run pytest -q
+        working-directory: apps/ai
