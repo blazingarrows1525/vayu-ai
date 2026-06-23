@@ -38,6 +38,11 @@ class Embedder:
     def available(self) -> bool:
         return self._available
 
+    @property
+    def active_model(self) -> str:
+        """The embedding model actually in use (provider-aware)."""
+        return self._model
+
     async def embed(self, texts: list[str]) -> list[list[float]]:
         if not self._available:
             raise EmbeddingUnavailable(

@@ -189,7 +189,7 @@ async def answer_question(
             "Retrieval needs OPENAI_API_KEY for embeddings. Set it on the intelligence plane.",
             0.0,
             [],
-            {"model": settings.embedding_model, "candidates": 0, "used": 0, "configured": False},
+            {"model": embedder.active_model, "candidates": 0, "used": 0, "configured": False},
         )
 
     query_vec = await embedder.embed_one(query)
@@ -215,7 +215,7 @@ async def answer_question(
             "No relevant context found in your knowledge sources.",
             0.0,
             [],
-            {"model": settings.embedding_model, "candidates": 0, "used": 0, "mode": mode},
+            {"model": embedder.active_model, "candidates": 0, "used": 0, "mode": mode},
         )
 
     by_id = {str(emb.id): emb for emb in embeddings}
@@ -259,7 +259,7 @@ async def answer_question(
         confidence=_confidence_from_scores(scores),
         citations=citations,
         retrieval={
-            "model": settings.embedding_model,
+            "model": embedder.active_model,
             "candidates": len(embeddings),
             "used": len(compressed),
             "mode": mode,
