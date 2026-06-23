@@ -2,11 +2,13 @@ import { and, desc, eq } from "drizzle-orm";
 import {
   aiGeneration,
   comment,
+  conversation,
   db,
   document,
   documentVersion,
   membership,
   mention,
+  message,
   type Role,
   user,
 } from "@vayu/db";
@@ -240,6 +242,95 @@ export async function restoreVersion(
     .set({ content: snapshot.content, updatedAt: new Date() })
     .where(and(eq(document.id, documentId), eq(document.workspaceId, workspaceId)));
   return { content: snapshot.content };
+}
+
+/* ------------------------------ conversations ----------------------------- */
+
+export async function createConversation(
+  workspaceId: string,
+  userId: string,
+  title?: string,
+  agentType?: string | null,
+) {
+  const [row] = await db
+    .insert(conversation)
+    .values({
+      workspaceId,
+      userId,
+      title: title || "New conversation",
+      agentType: agentType ?? null,
+    })
+    .returning({ id: conversation.id });
+  return row;
+}
+
+export async function listConversations(workspaceId: string, userId: string) {
+  return db
+    .select({
+      id: conversation.id,
+      title: conversation.title,
+      agentType: conversation.agentType,
+      updatedAt: conversation.updatedAt,
+    })
+    .from(conversation)
+    .where(
+      and(
+        eq(conversation.workspaceId, workspaceId),
+        eq(conversation.userId, userId),
+      ),
+    )
+    .orderBy(desc(conversation.updatedAt))
+    .limit(100);
+}
+
+export async function getConversation(id: string, workspaceId: string) {
+  const [row] = await db
+    .select()
+    .from(conversation)
+    .where(and(eq(conversation.id, id), eq(conversation.workspaceId, workspaceId)))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function listMessages(conversationId: string) {
+  return db
+    .select({
+      id: message.id,
+      role: message.role,
+      content: message.content,
+      provider: message.provider,
+      model: message.model,
+      tokens: message.tokens,
+      createdAt: message.createdAt,
+    })
+    .from(message)
+    .where(eq(message.conversationId, conversationId))
+    .orderBy(message.createdAt)
+    .limit(500);
+}
+
+export async function appendMessage(
+  conversationId: string,
+  role: string,
+  content: string,
+  extra?: { provider?: string; model?: string; tokens?: number },
+) {
+  const [row] = await db
+    .insert(message)
+    .values({
+      conversationId,
+      role,
+      content,
+      provider: extra?.provider ?? null,
+      model: extra?.model ?? null,
+      tokens: extra?.tokens ?? 0,
+    })
+    .returning({ id: message.id });
+  await db
+    .update(conversation)
+    .set({ updatedAt: new Date() })
+    .where(eq(conversation.id, conversationId));
+  return row;
 }
 
 export async function getAnalytics(workspaceId: string) {

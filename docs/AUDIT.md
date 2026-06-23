@@ -21,7 +21,7 @@
 | No URL ingestion | Add web-URL source to RAG (+ SSRF guard) | ✅ done (`phase-18`) |
 | No rerank / hybrid | Hybrid (vector+keyword/RRF) + MMR rerank + context compression | ✅ done (`phase-19`) |
 | No rate limiting / sec headers | Redis rate limit (AI) + security headers (web) | ✅ done (`phase-18`) |
-| No chat history | conversation/message tables + endpoints | planned |
+| No chat history | conversation/message tables + endpoints | ✅ done (`phase-20`) |
 
 ## Gated on external resources (cannot be truthfully claimed from this machine)
 - **Cloud deployment** (no cloud creds), **live LLM/embedding/vector verification** (no API keys /

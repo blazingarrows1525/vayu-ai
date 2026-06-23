@@ -25,3 +25,4 @@ the big picture and resume guide.
 | 17 | Multi-provider LLM layer | [phase-17-multi-llm.md](phase-17-multi-llm.md) | ✅ |
 | 18 | URL ingestion + rate limit + sec headers | [phase-18-hardening.md](phase-18-hardening.md) | ✅ |
 | 19 | Hybrid RAG + MMR rerank + compression | [phase-19-rag-hybrid.md](phase-19-rag-hybrid.md) | ✅ |
+| 20 | Chat / conversation persistence | [phase-20-chat.md](phase-20-chat.md) | ✅ |

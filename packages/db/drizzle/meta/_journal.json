@@ -8,6 +8,13 @@
       "when": 1782059144146,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1782188799309,
+      "tag": "0001_dazzling_silver_samurai",
+      "breakpoints": true
     }
   ]
 }

@@ -10,9 +10,11 @@ export { db, type Database } from "./client";
 import type {
   aiGeneration,
   comment,
+  conversation,
   document,
   documentVersion,
   membership,
+  message,
   user,
   workspace,
 } from "./schema";
@@ -27,3 +29,5 @@ export type NewDocument = typeof document.$inferInsert;
 export type DocumentVersion = typeof documentVersion.$inferSelect;
 export type Comment = typeof comment.$inferSelect;
 export type AiGeneration = typeof aiGeneration.$inferSelect;
+export type Conversation = typeof conversation.$inferSelect;
+export type Message = typeof message.$inferSelect;
