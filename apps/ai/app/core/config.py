@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     openrouter_api_key: str | None = None
     # Which provider to prefer; failover walks the rest in order if it's unconfigured.
     default_llm_provider: str = "anthropic"
-    default_chat_model: str = "claude-opus-4-8"
+    default_chat_model: str = "claude-sonnet-4-6"
     # Per-provider default models (used when a request doesn't pin one).
     openai_chat_model: str = "gpt-4o-mini"
     gemini_chat_model: str = "gemini-2.0-flash"
