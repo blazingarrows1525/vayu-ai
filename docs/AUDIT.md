@@ -19,7 +19,7 @@
 | Embeddings OpenAI-only | Provider abstraction (OpenAI + Voyage) | ✅ done (`phase-17`) |
 | Vector store pgvector-only | Adapter interface (pgvector default; Qdrant adapter) | planned |
 | No URL ingestion | Add web-URL source to RAG (+ SSRF guard) | ✅ done (`phase-18`) |
-| No rerank / hybrid | Add reranking + hybrid retrieval | planned |
+| No rerank / hybrid | Hybrid (vector+keyword/RRF) + MMR rerank + context compression | ✅ done (`phase-19`) |
 | No rate limiting / sec headers | Redis rate limit (AI) + security headers (web) | ✅ done (`phase-18`) |
 | No chat history | conversation/message tables + endpoints | planned |
 

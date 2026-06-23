@@ -55,6 +55,10 @@ class Settings(BaseSettings):
     voyage_api_key: str | None = None
     voyage_model: str = "voyage-3"
 
+    # RAG retrieval
+    rag_hybrid: bool = True  # vector + keyword fusion + MMR rerank
+    rag_max_context_chars: int = 6000
+
     # Object storage
     s3_endpoint: str = "http://localhost:9000"
     s3_region: str = "us-east-1"

@@ -6,12 +6,13 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.db.models import Embedding, KnowledgeSource
 from app.rag.chunking import chunk_text, estimate_tokens
+from app.rag.retrieval import compress, cosine, mmr_rerank, reciprocal_rank_fusion
 from app.services.embeddings import Embedder
 from app.services.llm import LLMUnavailable, resolve_llm
 
@@ -111,10 +112,63 @@ async def retrieve(
     return [(row[0], float(row[1])) for row in result.all()]
 
 
-def _confidence(rows: list[tuple[Embedding, float]]) -> float:
-    if not rows:
+async def keyword_search(
+    session: AsyncSession,
+    workspace_id: str,
+    query: str,
+    top_k: int,
+    source_ids: list[str] | None,
+) -> list[Embedding]:
+    """Full-text keyword search (Postgres FTS). Production should add a generated
+    tsvector column + GIN index; computed on the fly here for portability."""
+    tsv = func.to_tsvector("english", Embedding.content)
+    tsq = func.plainto_tsquery("english", query)
+    stmt = select(Embedding).where(
+        Embedding.workspace_id == uuid.UUID(workspace_id), tsv.op("@@")(tsq)
+    )
+    if source_ids:
+        stmt = stmt.where(
+            Embedding.knowledge_source_id.in_([uuid.UUID(s) for s in source_ids])
+        )
+    stmt = stmt.order_by(func.ts_rank(tsv, tsq).desc()).limit(top_k)
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def hybrid_retrieve(
+    session: AsyncSession,
+    *,
+    workspace_id: str,
+    query: str,
+    query_vec: list[float],
+    top_k: int,
+    source_ids: list[str] | None,
+) -> list[Embedding]:
+    """Vector + keyword candidates → Reciprocal Rank Fusion → MMR diversity rerank."""
+    pool = max(top_k * 3, 12)
+    vec_rows = await retrieve(session, workspace_id, query_vec, pool, source_ids)
+    kw_rows = await keyword_search(session, workspace_id, query, pool, source_ids)
+
+    by_id: dict[str, Embedding] = {}
+    for emb, _ in vec_rows:
+        by_id[str(emb.id)] = emb
+    for emb in kw_rows:
+        by_id[str(emb.id)] = emb
+
+    fused = reciprocal_rank_fusion(
+        [[str(e.id) for e, _ in vec_rows], [str(e.id) for e in kw_rows]]
+    )
+    candidates = [
+        (cid, [float(x) for x in by_id[cid].embedding])
+        for cid in sorted(by_id, key=lambda i: fused.get(i, 0.0), reverse=True)
+    ]
+    ranked_ids = mmr_rerank(query_vec, candidates, top_k)
+    return [by_id[cid] for cid in ranked_ids]
+
+
+def _confidence_from_scores(scores: list[float]) -> float:
+    if not scores:
         return 0.0
-    scores = [max(0.0, 1.0 - dist) for _, dist in rows]
     top = scores[0]
     coverage = sum(1 for s in scores if s > 0.3) / len(scores)
     return round(min(1.0, 0.6 * top + 0.4 * coverage), 2)
@@ -139,18 +193,39 @@ async def answer_question(
         )
 
     query_vec = await embedder.embed_one(query)
-    rows = await retrieve(session, workspace_id, query_vec, top_k, source_scope)
-    if not rows:
+
+    if settings.rag_hybrid:
+        embeddings = await hybrid_retrieve(
+            session,
+            workspace_id=workspace_id,
+            query=query,
+            query_vec=query_vec,
+            top_k=top_k,
+            source_ids=source_scope,
+        )
+        mode = "hybrid+mmr"
+    else:
+        embeddings = [
+            emb for emb, _ in await retrieve(session, workspace_id, query_vec, top_k, source_scope)
+        ]
+        mode = "vector"
+
+    if not embeddings:
         return AskResult(
             "No relevant context found in your knowledge sources.",
             0.0,
             [],
-            {"model": settings.embedding_model, "candidates": 0, "used": 0},
+            {"model": settings.embedding_model, "candidates": 0, "used": 0, "mode": mode},
         )
 
-    context = "\n\n".join(
-        f"[{i + 1}] {emb.content}" for i, (emb, _) in enumerate(rows)
+    by_id = {str(emb.id): emb for emb in embeddings}
+    # Context compression: dedupe + cap to a char budget before grounding.
+    compressed = compress(
+        [(str(emb.id), emb.content) for emb in embeddings],
+        settings.rag_max_context_chars,
     )
+    context = "\n\n".join(f"[{i + 1}] {text}" for i, (_, text) in enumerate(compressed))
+
     try:
         provider = resolve_llm(settings)
         answer, _ = await provider.complete(
@@ -164,23 +239,30 @@ async def answer_question(
             "to generate a grounded answer from it."
         )
 
-    citations = [
-        Citation(
-            source_id=str(emb.knowledge_source_id),
-            chunk_index=emb.chunk_index,
-            score=round(max(0.0, 1.0 - dist), 3),
-            snippet=emb.content[:240],
+    citations: list[Citation] = []
+    scores: list[float] = []
+    for cid, text in compressed:
+        emb = by_id[cid]
+        score = round(max(0.0, cosine(query_vec, [float(x) for x in emb.embedding])), 3)
+        scores.append(score)
+        citations.append(
+            Citation(
+                source_id=str(emb.knowledge_source_id),
+                chunk_index=emb.chunk_index,
+                score=score,
+                snippet=text[:240],
+            )
         )
-        for emb, dist in rows
-    ]
+
     return AskResult(
         answer=answer,
-        confidence=_confidence(rows),
+        confidence=_confidence_from_scores(scores),
         citations=citations,
         retrieval={
             "model": settings.embedding_model,
-            "candidates": len(rows),
-            "used": len(rows),
+            "candidates": len(embeddings),
+            "used": len(compressed),
+            "mode": mode,
         },
     )
 
