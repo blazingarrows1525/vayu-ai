@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
+import ipaddress
+import socket
 import uuid
+from urllib.parse import urlparse
 
+import httpx
 from fastapi import (
     APIRouter,
     Depends,
@@ -21,13 +26,37 @@ from app.core.config import Settings, get_settings
 from app.core.security import Principal, get_principal, require_workspace
 from app.db.base import get_session
 from app.db.models import KnowledgeSource
-from app.rag.parsing import detect_source_type, extract_text
+from app.rag.parsing import detect_source_type, extract_text, html_to_text
 from app.rag.pipeline import (
     answer_question,
     ingest_document,
     related_sources,
     semantic_search,
 )
+
+
+async def _is_public_url(url: str) -> bool:
+    """SSRF guard: only http(s) to a publicly-routable host (blocks localhost,
+    private ranges, link-local/cloud-metadata)."""
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        return False
+    try:
+        infos = await asyncio.to_thread(socket.getaddrinfo, parsed.hostname, None)
+    except OSError:
+        return False
+    for *_, sockaddr in infos:
+        ip = ipaddress.ip_address(sockaddr[0])
+        if (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_reserved
+            or ip.is_multicast
+            or ip.is_unspecified
+        ):
+            return False
+    return True
 
 router = APIRouter()
 
@@ -41,6 +70,12 @@ class AskRequest(BaseModel):
 class SearchRequest(BaseModel):
     query: str
     top_k: int = Field(default=12, ge=1, le=50)
+
+
+class IngestUrlRequest(BaseModel):
+    url: str
+    title: str | None = None
+    document_id: str | None = None
 
 
 async def _attach_titles(
@@ -97,6 +132,49 @@ async def ingest(
         document_id=document_id,
         title=title or file.filename or "Untitled",
         source_type=detect_source_type(file.filename or ""),
+        text=text,
+    )
+    return _source_json(source)
+
+
+@router.post("/knowledge/ingest-url")
+async def ingest_url(
+    req: IngestUrlRequest,
+    principal: Principal = Depends(get_principal),
+    session: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> dict:
+    workspace_id = require_workspace(principal)
+    if not await _is_public_url(req.url):
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "URL must be a public http(s) address"
+        )
+    try:
+        async with httpx.AsyncClient(
+            timeout=20.0, follow_redirects=True, headers={"user-agent": "VAYU-AI/1.0"}
+        ) as client:
+            resp = await client.get(req.url)
+            resp.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, f"could not fetch URL: {exc}"
+        ) from exc
+
+    content_type = resp.headers.get("content-type", "")
+    text = resp.text if "text/plain" in content_type else html_to_text(resp.text)
+    if not text.strip():
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY, "no extractable text at URL"
+        )
+
+    source = await ingest_document(
+        session,
+        settings,
+        workspace_id=workspace_id,
+        created_by=principal.user_id,
+        document_id=req.document_id,
+        title=req.title or req.url,
+        source_type="url",
         text=text,
     )
     return _source_json(source)

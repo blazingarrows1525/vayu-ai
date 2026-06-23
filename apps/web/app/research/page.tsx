@@ -28,6 +28,8 @@ interface AskResult {
 export default function ResearchPage() {
   const [sources, setSources] = useState<Source[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [url, setUrl] = useState("");
+  const [addingUrl, setAddingUrl] = useState(false);
   const [query, setQuery] = useState("");
   const [asking, setAsking] = useState(false);
   const [result, setResult] = useState<AskResult | null>(null);
@@ -54,6 +56,22 @@ export default function ResearchPage() {
     } finally {
       setUploading(false);
       e.target.value = "";
+    }
+  }
+
+  async function onAddUrl() {
+    if (!url.trim()) return;
+    setAddingUrl(true);
+    try {
+      await fetch("/api/research/ingest-url", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      setUrl("");
+      await loadSources();
+    } finally {
+      setAddingUrl(false);
     }
   }
 
@@ -100,6 +118,22 @@ export default function ResearchPage() {
               disabled={uploading}
             />
           </label>
+        </div>
+        <div className="mt-3 flex gap-2">
+          <input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && onAddUrl()}
+            placeholder="…or paste a web URL to ingest"
+            className="flex-1 rounded-lg border border-vayu-border bg-vayu-bg px-3 py-2 text-sm text-vayu-fg outline-none focus:border-vayu-accent"
+          />
+          <button
+            onClick={onAddUrl}
+            disabled={addingUrl}
+            className="rounded-lg border border-vayu-border px-3 py-2 text-sm text-vayu-muted transition hover:border-vayu-accent hover:text-vayu-fg disabled:opacity-60"
+          >
+            {addingUrl ? "Adding…" : "Add URL"}
+          </button>
         </div>
         <ul className="mt-4 flex flex-col gap-2">
           {sources.length === 0 && (

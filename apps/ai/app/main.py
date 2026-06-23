@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -9,10 +10,12 @@ from contextlib import asynccontextmanager
 import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.observability import setup_observability
+from app.core.ratelimit import allow_request
 
 settings = get_settings()
 
@@ -40,6 +43,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    if request.url.path.startswith("/v1/"):
+        client = request.client.host if request.client else "anon"
+        window = 60
+        key = f"rl:{client}:{int(time.time() // window)}"
+        if not await allow_request(key, settings.rate_limit_per_min, window):
+            return JSONResponse({"detail": "rate limit exceeded"}, status_code=429)
+    return await call_next(request)
 
 
 @app.middleware("http")

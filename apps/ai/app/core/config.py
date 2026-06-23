@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     # Runtime
     environment: str = "development"
     log_level: str = "info"
+    # Security — per-client requests/min on /v1/* (fail-open if Redis is down).
+    rate_limit_per_min: int = 120
 
     # Data tier (shared with the product plane)
     database_url: str = "postgresql://vayu:vayu@localhost:5432/vayu"
