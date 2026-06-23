@@ -1,0 +1,56 @@
+name: vayu
+
+# Full-stack overlay: adds the built web + AI plane on top of the data tier in
+# docker-compose.yml. Run both files together:
+#   docker compose -f infra/docker/docker-compose.yml -f infra/docker/docker-compose.prod.yml up -d --build
+# Secrets (ANTHROPIC_API_KEY, VOYAGE_API_KEY, BETTER_AUTH_SECRET) are read from the
+# shell environment so they never live in a committed file. Inter-service URLs use
+# Docker DNS (service names), while browser-facing URLs stay localhost.
+services:
+  ai:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.ai
+    container_name: vayu-ai
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://vayu:vayu@postgres:5432/vayu
+      REDIS_URL: redis://redis:6379/0
+      AUTH_JWKS_URL: http://web:3000/api/auth/jwks
+      AUTH_JWT_ISSUER: vayu
+      AUTH_JWT_AUDIENCE: vayu-ai
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY:-}
+      DEFAULT_LLM_PROVIDER: anthropic
+      DEFAULT_CHAT_MODEL: claude-sonnet-4-6
+      EMBEDDING_PROVIDER: voyage
+      VOYAGE_MODEL: voyage-3
+      EMBEDDING_DIM: "1024"
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY_ID: minioadmin
+      S3_SECRET_ACCESS_KEY: minioadmin
+      S3_BUCKET: vayu
+    ports:
+      - "8787:8787"
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.web
+    container_name: vayu-web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://vayu:vayu@postgres:5432/vayu
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}
+      BETTER_AUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      AI_SERVICE_URL: http://ai:8787
+    ports:
+      - "3000:3000"

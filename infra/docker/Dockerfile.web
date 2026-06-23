@@ -4,15 +4,30 @@ ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH NEXT_TELEMETRY_DISABLED=1
 RUN corepack enable
 WORKDIR /app
 
-FROM base AS deps
+FROM base AS build
+# Build-time placeholders so module evaluation (Next's "collect page data" pass)
+# doesn't throw on missing env. Real values are injected at runtime by Compose.
+# NEXT_PUBLIC_* inline into the client bundle at build — override via --build-arg
+# (e.g. --build-arg NEXT_PUBLIC_APP_URL=https://your-domain) for a real deployment.
+ARG DATABASE_URL=postgresql://build:build@localhost:5432/build
+ARG BETTER_AUTH_SECRET=build-time-placeholder-secret-0123456789abcdef
+ARG BETTER_AUTH_URL=http://localhost:3000
+ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
+ARG AI_SERVICE_URL=http://localhost:8787
+ENV DATABASE_URL=$DATABASE_URL \
+    BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET \
+    BETTER_AUTH_URL=$BETTER_AUTH_URL \
+    NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
+    AI_SERVICE_URL=$AI_SERVICE_URL
+# Install all workspace deps first (cached on lockfile/manifests). In a pnpm
+# workspace this creates node_modules in the root AND each package — apps/web's
+# node_modules is where the `next` binary lives, so it must exist before build.
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/web/package.json apps/web/package.json
 COPY packages/db/package.json packages/db/package.json
 COPY packages/editor/package.json packages/editor/package.json
 RUN pnpm install --frozen-lockfile
-
-FROM base AS build
-COPY --from=deps /app/node_modules ./node_modules
+# node_modules is .dockerignore'd, so this copies source only — the install above survives.
 COPY . .
 RUN pnpm -C apps/web build
 

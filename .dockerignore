@@ -11,3 +11,6 @@
 **/coverage
 **/.pytest_cache
 **/.ruff_cache
+**/.uv-cache
+**/.claude
+**/*.log
