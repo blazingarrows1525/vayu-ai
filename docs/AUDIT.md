@@ -25,5 +25,13 @@
 
 ## Gated on external resources (cannot be truthfully claimed from this machine)
 - **Cloud deployment** (no cloud creds), **live LLM/embedding/vector verification** (no API keys /
-  running Pinecone·Qdrant), **80%+ coverage / Playwright e2e** against a live stack (no Docker DB).
+  running Pinecone·Qdrant), **deep authenticated e2e / 80%+ coverage** against a live stack (no Docker DB).
+- The **Playwright scaffold + CI e2e job** are in place (`phase-22`) and run smoke specs on public
+  routes in CI; deeper flows need a live DB.
 - Code for all of the above is implemented and **builds green**; live activation needs keys + Docker.
+
+## Every build-verifiable audit gap is now closed (phases 17–22)
+Multi-provider LLM, embedding abstraction, vector-store adapters, hybrid+rerank+compression RAG,
+URL ingestion, rate limiting, security headers, chat persistence, and the e2e scaffold are all
+implemented and green. What remains is **infra-gated execution** (deploy, live provider/DB runs),
+not missing code.

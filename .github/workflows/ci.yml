@@ -43,3 +43,27 @@ jobs:
       - name: Tests (pytest)
         run: uv run pytest -q
         working-directory: apps/ai
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://vayu:vayu@localhost:5432/vayu
+      BETTER_AUTH_SECRET: e2e-secret-0123456789abcdefghij0123
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright browser
+        run: pnpm -C apps/web exec playwright install --with-deps chromium
+      - name: Build
+        run: pnpm -C apps/web build
+      - name: E2E (Playwright)
+        run: pnpm -C apps/web test:e2e
