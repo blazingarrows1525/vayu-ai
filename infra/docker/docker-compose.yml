@@ -5,6 +5,8 @@ services:
   postgres:
     image: pgvector/pgvector:pg16
     container_name: vayu-postgres
+    # Auto-recover if the Docker/WSL backend restarts (e.g. under memory pressure).
+    restart: unless-stopped
     environment:
       POSTGRES_USER: vayu
       POSTGRES_PASSWORD: vayu
@@ -23,6 +25,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: vayu-redis
+    restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "6379:6379"
@@ -38,6 +41,7 @@ services:
   minio:
     image: minio/minio:latest
     container_name: vayu-minio
+    restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin
