@@ -27,6 +27,7 @@ export default function DocPage() {
   const [versions, setVersions] = useState<
     { version: number; summary: string | null; createdAt: string }[]
   >([]);
+  const [diffData, setDiffData] = useState<{ changes: any[]; from: number; to: number } | null>(null);
 
   function loadComments() {
     fetch(`/api/documents/${id}/comments`)
@@ -92,6 +93,17 @@ export default function DocPage() {
     fetch(`/api/documents/${id}/versions`)
       .then((r) => (r.ok ? r.json() : { versions: [] }))
       .then((d) => setVersions(d.versions ?? []));
+  }
+
+  async function viewDiff(from: number, to: number) {
+    if (diffData?.from === from && diffData?.to === to) {
+      setDiffData(null);
+      return;
+    }
+    const r = await fetch(`/api/documents/${id}/diff?from=${from}&to=${to}`);
+    if (r.ok) {
+      setDiffData(await r.json());
+    }
   }
 
   async function snapshot() {
@@ -184,22 +196,55 @@ export default function DocPage() {
             Snapshot now
           </button>
           <ul className="mt-2 flex flex-col gap-1">
-            {versions.map((v) => (
+            {versions.map((v, i) => {
+              const previousVersion = versions[i + 1]?.version;
+              return (
               <li
                 key={v.version}
-                className="flex items-center justify-between text-xs text-vayu-muted"
+                className="flex flex-col text-xs text-vayu-muted"
               >
-                <span>
-                  v{v.version} · {new Date(v.createdAt).toLocaleDateString()}
-                </span>
-                <button
-                  onClick={() => restore(v.version)}
-                  className="text-vayu-accent hover:underline"
-                >
-                  restore
-                </button>
+                <div className="flex items-center justify-between">
+                  <span>
+                    v{v.version} · {new Date(v.createdAt).toLocaleDateString()}
+                  </span>
+                  <div className="flex gap-2">
+                    {previousVersion !== undefined && (
+                      <button
+                        onClick={() => viewDiff(previousVersion, v.version)}
+                        className="text-vayu-accent hover:underline"
+                        title={`Compare with v${previousVersion}`}
+                      >
+                        diff
+                      </button>
+                    )}
+                    <button
+                      onClick={() => restore(v.version)}
+                      className="text-vayu-accent hover:underline"
+                    >
+                      restore
+                    </button>
+                  </div>
+                </div>
+                {diffData && diffData.from === previousVersion && diffData.to === v.version && (
+                  <div className="mt-2 rounded bg-vayu-surface p-2 font-mono text-[10px] leading-relaxed max-h-40 overflow-y-auto w-full">
+                    {diffData.changes.map((part, index) => (
+                      <span
+                        key={index}
+                        className={
+                          part.added
+                            ? "bg-emerald-900/30 text-emerald-400"
+                            : part.removed
+                            ? "bg-rose-900/30 text-rose-400 line-through"
+                            : ""
+                        }
+                      >
+                        {part.value}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </li>
-            ))}
+            )})}
           </ul>
         </aside>
       </div>

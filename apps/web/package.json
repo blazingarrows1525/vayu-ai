@@ -17,6 +17,7 @@
     "@vayu/editor": "workspace:*",
     "@vercel/otel": "^1.13.0",
     "better-auth": "^1.6.20",
+    "diff": "^9.0.0",
     "drizzle-orm": "^0.45.2",
     "next": "^16.2.9",
     "pino": "^9.5.0",
@@ -25,6 +26,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
+    "@types/diff": "^8.0.0",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",

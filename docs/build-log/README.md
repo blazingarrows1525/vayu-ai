@@ -21,3 +21,4 @@ the big picture and resume guide.
 | 13 | Testing | [phase-13.md](phase-13.md) | ✅ |
 | 14 | Documentation & polish | [phase-14.md](phase-14.md) | ✅ |
 | 15 | Floating UI overhaul | [phase-15-ui.md](phase-15-ui.md) | ✅ |
+| 16 | Editor drag-handle + version diff | [phase-16-polish.md](phase-16-polish.md) | ✅ |

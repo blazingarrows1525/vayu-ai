@@ -32,6 +32,37 @@
   cursor: pointer;
 }
 
+/* Drag Handle */
+.vayu-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--vp-muted);
+  cursor: grab;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.vayu-drag-handle:active {
+  cursor: grabbing;
+}
+
+.vayu-drag-handle:hover {
+  background-color: var(--vp-border);
+}
+.vayu-prose:hover .vayu-drag-handle,
+.vayu-drag-handle:hover {
+  opacity: 1;
+}
+
+.tiptap .ProseMirror-selectednode {
+  outline: 2px solid var(--vp-accent);
+  border-radius: 4px;
+}
+
 /* Lists */
 .vayu-prose ul,
 .vayu-prose ol { padding-left: 1.4rem; }

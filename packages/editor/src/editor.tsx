@@ -5,8 +5,32 @@ import "./styles.css";
 
 import type { Editor, JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
+import DragHandle from "@tiptap/extension-drag-handle-react";
 import { useEffect } from "react";
 import { vayuExtensions } from "./extensions";
+
+function GripIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="9" cy="12" r="1" />
+      <circle cx="9" cy="5" r="1" />
+      <circle cx="9" cy="19" r="1" />
+      <circle cx="15" cy="12" r="1" />
+      <circle cx="15" cy="5" r="1" />
+      <circle cx="15" cy="19" r="1" />
+    </svg>
+  );
+}
 
 export interface VayuEditorProps {
   content?: JSONContent | string;
@@ -49,5 +73,14 @@ export function VayuEditor({
     }
   }, [editor, editable]);
 
-  return <EditorContent editor={editor} className={className} />;
+  return (
+    <div style={{ position: "relative" }}>
+      <EditorContent editor={editor} className={className} />
+      {editor && (
+        <DragHandle editor={editor} className="vayu-drag-handle">
+          <GripIcon />
+        </DragHandle>
+      )}
+    </div>
+  );
 }
