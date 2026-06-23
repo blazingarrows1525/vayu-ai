@@ -13,7 +13,7 @@ from app.core.config import Settings
 from app.db.models import Embedding, KnowledgeSource
 from app.rag.chunking import chunk_text, estimate_tokens
 from app.services.embeddings import Embedder
-from app.services.llm import AnthropicProvider, LLMUnavailable
+from app.services.llm import LLMUnavailable, resolve_llm
 
 _GROUND_SYSTEM = (
     "You are VAYU's research assistant. Answer the question using ONLY the numbered "
@@ -151,8 +151,8 @@ async def answer_question(
     context = "\n\n".join(
         f"[{i + 1}] {emb.content}" for i, (emb, _) in enumerate(rows)
     )
-    provider = AnthropicProvider(settings)
     try:
+        provider = resolve_llm(settings)
         answer, _ = await provider.complete(
             system=_GROUND_SYSTEM,
             prompt=f"Question: {query}\n\nSources:\n{context}",
@@ -160,8 +160,8 @@ async def answer_question(
         )
     except LLMUnavailable:
         answer = (
-            "Retrieved relevant context (see citations). Set ANTHROPIC_API_KEY to "
-            "generate a grounded answer from it."
+            "Retrieved relevant context (see citations). Configure a model provider key "
+            "to generate a grounded answer from it."
         )
 
     citations = [

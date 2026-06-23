@@ -13,7 +13,15 @@ from app.agents.graph import build_agent_graph
 from app.agents.registry import AGENTS
 from app.core.config import Settings
 from app.db.models import AgentRun, AgentStep
-from app.services.llm import AnthropicProvider
+from app.services.llm import AnthropicProvider, LLMUnavailable, resolve_llm
+
+
+def _provider(settings: Settings):
+    """Preferred provider with failover; unavailable falls back so nodes degrade per-step."""
+    try:
+        return resolve_llm(settings)
+    except LLMUnavailable:
+        return AnthropicProvider(settings)
 
 
 def _now() -> datetime.datetime:
@@ -30,7 +38,7 @@ async def run_and_persist(
     workspace_id: str,
 ) -> tuple[AgentRun, list[dict]]:
     config = AGENTS[agent_type]
-    graph = build_agent_graph(AnthropicProvider(settings), config)
+    graph = build_agent_graph(_provider(settings), config)
 
     agent_run = AgentRun(
         workspace_id=uuid.UUID(workspace_id),
@@ -74,7 +82,7 @@ async def stream_run(
 ) -> AsyncIterator[str]:
     """Live per-node progress via LangGraph's astream (no persistence)."""
     config = AGENTS[agent_type]
-    graph = build_agent_graph(AnthropicProvider(settings), config)
+    graph = build_agent_graph(_provider(settings), config)
 
     yield _sse("start", {"agent": agent_type})
     async for event in graph.astream({"task": task}):

@@ -20,7 +20,7 @@ from app.core.config import Settings, get_settings
 from app.core.prompts import SUPPORTED_COMMANDS, build_prompt
 from app.core.security import Principal, get_principal, require_workspace
 from app.services.cache import cache_get, cache_set
-from app.services.llm import AnthropicProvider, LLMUnavailable, Usage
+from app.services.llm import LLMUnavailable, Usage, resolve_llm
 
 router = APIRouter()
 
@@ -32,6 +32,7 @@ class CopilotRequest(BaseModel):
     context: str | None = None
     tone: str | None = None
     model: str | None = None
+    provider: str | None = None  # anthropic | openai | gemini | groq | openrouter
 
 
 def _sse(event: str, data: dict) -> str:
@@ -40,7 +41,8 @@ def _sse(event: str, data: dict) -> str:
 
 def _idempotency_key(req: CopilotRequest, model: str) -> str:
     raw = "|".join(
-        [req.command, req.selection or "", req.context or "", req.tone or "", model]
+        [req.command, req.selection or "", req.context or "", req.tone or "",
+         model, req.provider or ""]
     )
     return "gen:" + hashlib.sha1(raw.encode("utf-8")).hexdigest()
 
@@ -53,9 +55,18 @@ def _chunks(text: str, size: int = 5) -> list[str]:
 async def _generate(
     req: CopilotRequest, principal: Principal, settings: Settings
 ) -> AsyncIterator[str]:
-    provider = AnthropicProvider(settings)
-    model = req.model or settings.default_chat_model
-    key = _idempotency_key(req, model)
+    requested_model = req.model  # None lets each provider use its own default
+    label_model = req.model or settings.default_chat_model
+    key = _idempotency_key(req, label_model)
+
+    try:
+        provider = resolve_llm(settings, req.provider)
+    except LLMUnavailable:
+        provider = None
+    provider_name = (
+        provider.provider if provider is not None
+        else (req.provider or settings.default_llm_provider)
+    )
 
     # Idempotency: replay a cached completion instead of re-billing the provider.
     cached = await cache_get(key)
@@ -66,15 +77,35 @@ async def _generate(
         yield _sse(
             "usage",
             {"promptTokens": 0, "completionTokens": 0, "costUsd": 0,
-             "model": model, "provider": provider.provider, "cached": True},
+             "model": label_model, "provider": provider_name, "cached": True},
         )
         yield _sse("done", {"cached": True})
         return
 
     system, user = build_prompt(req.command, req.selection, req.context, req.tone)
+
+    if provider is None:
+        notice = (
+            f"[{req.command}] Copilot is wired end-to-end. Configure a model provider key "
+            "(ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY / GROQ_API_KEY / "
+            "OPENROUTER_API_KEY) to stream real output."
+        )
+        for chunk in _chunks(notice):
+            yield _sse("token", {"delta": chunk})
+            await asyncio.sleep(0.01)
+        yield _sse(
+            "usage",
+            {"promptTokens": 0, "completionTokens": 0, "costUsd": 0,
+             "model": label_model, "provider": provider_name, "configured": False},
+        )
+        yield _sse("done", {})
+        return
+
     collected: list[str] = []
     try:
-        async for kind, payload in provider.stream(system=system, prompt=user, model=model):
+        async for kind, payload in provider.stream(
+            system=system, prompt=user, model=requested_model
+        ):
             if kind == "token" and isinstance(payload, str):
                 collected.append(payload)
                 yield _sse("token", {"delta": payload})
@@ -87,19 +118,6 @@ async def _generate(
                      "costUsd": payload.cost_usd, "model": payload.model,
                      "provider": payload.provider},
                 )
-    except LLMUnavailable:
-        notice = (
-            f"[{req.command}] Copilot is wired end-to-end. Set ANTHROPIC_API_KEY "
-            "on the intelligence plane to stream real model output."
-        )
-        for chunk in _chunks(notice):
-            yield _sse("token", {"delta": chunk})
-            await asyncio.sleep(0.01)
-        yield _sse(
-            "usage",
-            {"promptTokens": 0, "completionTokens": 0, "costUsd": 0,
-             "model": model, "provider": provider.provider, "configured": False},
-        )
     except Exception as exc:  # noqa: BLE001 - surface provider errors to the client
         yield _sse("error", {"message": str(exc)})
 

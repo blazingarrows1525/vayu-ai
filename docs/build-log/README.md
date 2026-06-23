@@ -22,3 +22,4 @@ the big picture and resume guide.
 | 14 | Documentation & polish | [phase-14.md](phase-14.md) | ✅ |
 | 15 | Floating UI overhaul | [phase-15-ui.md](phase-15-ui.md) | ✅ |
 | 16 | Editor drag-handle + version diff | [phase-16-polish.md](phase-16-polish.md) | ✅ |
+| 17 | Multi-provider LLM layer | [phase-17-multi-llm.md](phase-17-multi-llm.md) | ✅ |

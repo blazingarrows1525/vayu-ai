@@ -31,13 +31,27 @@ class Settings(BaseSettings):
     # product plane exists. MUST stay false outside local development.
     auth_allow_dev_token: bool = False
 
-    # Model providers
+    # Model providers (chat)
     openai_api_key: str | None = None
     anthropic_api_key: str | None = None
     gemini_api_key: str | None = None
+    groq_api_key: str | None = None
+    openrouter_api_key: str | None = None
+    # Which provider to prefer; failover walks the rest in order if it's unconfigured.
+    default_llm_provider: str = "anthropic"
+    default_chat_model: str = "claude-opus-4-8"
+    # Per-provider default models (used when a request doesn't pin one).
+    openai_chat_model: str = "gpt-4o-mini"
+    gemini_chat_model: str = "gemini-2.0-flash"
+    groq_chat_model: str = "llama-3.3-70b-versatile"
+    openrouter_chat_model: str = "anthropic/claude-3.5-sonnet"
+
+    # Embeddings
+    embedding_provider: str = "openai"  # openai | voyage
     embedding_model: str = "text-embedding-3-small"
     embedding_dim: int = 1536
-    default_chat_model: str = "claude-opus-4-8"
+    voyage_api_key: str | None = None
+    voyage_model: str = "voyage-3"
 
     # Object storage
     s3_endpoint: str = "http://localhost:9000"

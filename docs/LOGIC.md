@@ -13,6 +13,12 @@ Live features activate with Docker (DB) + provider keys.
 > (`components/floating-dock.tsx`, mounted in the root layout) with glowing, magnifying icons
 > for every module. Pure CSS animations, no new deps. See `docs/build-log/phase-15-ui.md`.
 
+> **Multi-provider LLM (Phase 17):** chat is no longer Anthropic-only. `apps/ai/app/services/llm.py`
+> exposes `resolve_llm(settings, preferred)` — first *available* provider across
+> `anthropic / openai / gemini / groq / openrouter` (OpenAI-compatible ones share one class via
+> base-URL), with **failover + provider switching + token/cost tracking**. Embeddings abstract
+> OpenAI + Voyage. Status at `GET /v1/providers`. Production-readiness tracker: `docs/AUDIT.md`.
+
 ---
 
 ## 1. What this project is
