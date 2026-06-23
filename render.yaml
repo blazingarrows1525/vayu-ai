@@ -1,0 +1,73 @@
+# Render Blueprint — deploys VAYU as Docker containers + a managed Postgres (pgvector).
+#
+# Deploy:  Render Dashboard → New → Blueprint → connect this repo → Apply.
+# Render builds both Dockerfiles in the cloud (no load on your machine) and provisions the DB.
+#
+# Two secrets are prompted at deploy (sync: false): ANTHROPIC_API_KEY, VOYAGE_API_KEY.
+# Four URLs are filled AFTER the first deploy, once Render assigns the *.onrender.com hostnames
+# (also sync: false — see the inline arrows). Then trigger one redeploy.
+databases:
+  - name: vayu-db
+    databaseName: vayu
+    user: vayu
+    plan: free
+    postgresMajorVersion: "16"
+
+services:
+  # ── Intelligence plane (FastAPI) — built from infra/docker/Dockerfile.ai ──
+  - type: web
+    name: vayu-ai
+    runtime: docker
+    dockerfilePath: ./infra/docker/Dockerfile.ai
+    dockerContext: .
+    plan: free
+    region: oregon
+    healthCheckPath: /v1/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vayu-db
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: VOYAGE_API_KEY
+        sync: false
+      - key: DEFAULT_LLM_PROVIDER
+        value: anthropic
+      - key: DEFAULT_CHAT_MODEL
+        value: claude-sonnet-4-6
+      - key: EMBEDDING_PROVIDER
+        value: voyage
+      - key: VOYAGE_MODEL
+        value: voyage-3
+      - key: EMBEDDING_DIM
+        value: "1024"
+      - key: AUTH_JWT_ISSUER
+        value: vayu
+      - key: AUTH_JWT_AUDIENCE
+        value: vayu-ai
+      - key: AUTH_JWKS_URL
+        sync: false # → https://<vayu-web hostname>/api/auth/jwks
+
+  # ── Product plane (Next.js) — built from infra/docker/Dockerfile.web ──
+  - type: web
+    name: vayu-web
+    runtime: docker
+    dockerfilePath: ./infra/docker/Dockerfile.web
+    dockerContext: .
+    plan: free
+    region: oregon
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vayu-db
+          property: connectionString
+      - key: BETTER_AUTH_SECRET
+        generateValue: true
+      - key: AI_SERVICE_URL
+        sync: false # → https://<vayu-ai hostname>
+      - key: BETTER_AUTH_URL
+        sync: false # → https://<vayu-web hostname>
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false # → https://<vayu-web hostname>
