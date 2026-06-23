@@ -17,7 +17,7 @@
 |---|---|---|
 | LLM Anthropic-only | Unified multi-provider layer (OpenAI, Gemini, Groq, OpenRouter) + failover + switch + token/cost | ✅ done (`phase-17`) |
 | Embeddings OpenAI-only | Provider abstraction (OpenAI + Voyage) | ✅ done (`phase-17`) |
-| Vector store pgvector-only | Adapter interface (pgvector default; Qdrant adapter) | planned |
+| Vector store pgvector-only | Adapter interface + Qdrant/Pinecone/Chroma (pgvector default) | ✅ done (`phase-21`) |
 | No URL ingestion | Add web-URL source to RAG (+ SSRF guard) | ✅ done (`phase-18`) |
 | No rerank / hybrid | Hybrid (vector+keyword/RRF) + MMR rerank + context compression | ✅ done (`phase-19`) |
 | No rate limiting / sec headers | Redis rate limit (AI) + security headers (web) | ✅ done (`phase-18`) |

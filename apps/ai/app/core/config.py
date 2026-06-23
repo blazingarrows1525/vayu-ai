@@ -59,6 +59,15 @@ class Settings(BaseSettings):
     rag_hybrid: bool = True  # vector + keyword fusion + MMR rerank
     rag_max_context_chars: int = 6000
 
+    # Vector store: pgvector (default, in-DB) | qdrant | chroma | pinecone
+    vector_store: str = "pgvector"
+    vector_collection: str = "vayu_embeddings"
+    qdrant_url: str | None = None
+    qdrant_api_key: str | None = None
+    chroma_url: str | None = None
+    pinecone_api_key: str | None = None
+    pinecone_index_host: str | None = None
+
     # Object storage
     s3_endpoint: str = "http://localhost:9000"
     s3_region: str = "us-east-1"
