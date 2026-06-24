@@ -8,6 +8,24 @@ const ISSUER = process.env.AUTH_JWT_ISSUER ?? "vayu";
 const AUDIENCE = process.env.AUTH_JWT_AUDIENCE ?? "vayu-ai";
 
 /**
+ * Resolve the auth base URL defensively. A malformed value (e.g. an un-substituted
+ * "https://<host>" placeholder) would otherwise throw inside Better Auth at module
+ * load and take down every route. Order: a *valid* BETTER_AUTH_URL → Render's
+ * auto-injected RENDER_EXTERNAL_URL → localhost. Invalid candidates are skipped.
+ */
+function resolveBaseURL(): string {
+  for (const candidate of [process.env.BETTER_AUTH_URL, process.env.RENDER_EXTERNAL_URL]) {
+    if (!candidate) continue;
+    try {
+      return new URL(candidate).origin;
+    } catch {
+      // skip malformed values (e.g. an unresolved "<placeholder>")
+    }
+  }
+  return "http://localhost:3000";
+}
+
+/**
  * Better Auth — the product plane's identity authority.
  *
  * - email/password + (optional) OAuth
@@ -17,7 +35,7 @@ const AUDIENCE = process.env.AUTH_JWT_AUDIENCE ?? "vayu-ai";
  *   role, and serves JWKS at /api/auth/jwks for the intelligence plane to verify
  */
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
+  baseURL: resolveBaseURL(),
   secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, {
     provider: "pg",
