@@ -5,20 +5,16 @@ RUN corepack enable
 WORKDIR /app
 
 FROM base AS build
-# Build-time placeholders so module evaluation (Next's "collect page data" pass)
-# doesn't throw on missing env. Real values are injected at runtime by Compose.
-# NEXT_PUBLIC_* inline into the client bundle at build — override via --build-arg
-# (e.g. --build-arg NEXT_PUBLIC_APP_URL=https://your-domain) for a real deployment.
+# Only DATABASE_URL and BETTER_AUTH_SECRET are evaluated during the build (Next's
+# "collect page data" loads the DB client + Better Auth), so they get valid placeholders.
+# Runtime-only URLs (BETTER_AUTH_URL, AI_SERVICE_URL, NEXT_PUBLIC_APP_URL) are deliberately
+# NOT declared as build ARGs — that way a platform that injects env vars as build args
+# (e.g. Render) can't feed an invalid value into the build. Their code-level localhost
+# fallbacks apply at build; the real values are read at runtime.
 ARG DATABASE_URL=postgresql://build:build@localhost:5432/build
 ARG BETTER_AUTH_SECRET=build-time-placeholder-secret-0123456789abcdef
-ARG BETTER_AUTH_URL=http://localhost:3000
-ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
-ARG AI_SERVICE_URL=http://localhost:8787
 ENV DATABASE_URL=$DATABASE_URL \
-    BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET \
-    BETTER_AUTH_URL=$BETTER_AUTH_URL \
-    NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
-    AI_SERVICE_URL=$AI_SERVICE_URL
+    BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET
 # Install all workspace deps first (cached on lockfile/manifests). In a pnpm
 # workspace this creates node_modules in the root AND each package — apps/web's
 # node_modules is where the `next` binary lives, so it must exist before build.
