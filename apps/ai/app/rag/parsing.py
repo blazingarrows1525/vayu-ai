@@ -11,6 +11,8 @@ _EXT_TO_TYPE = {
     "md": "md",
     "markdown": "md",
     "txt": "txt",
+    "csv": "csv",
+    "xlsx": "xlsx",
 }
 
 
@@ -20,6 +22,25 @@ def _ext(filename: str) -> str:
 
 def detect_source_type(filename: str) -> str:
     return _EXT_TO_TYPE.get(_ext(filename), "txt")
+
+
+def _xlsx_to_text(data: bytes) -> str:
+    """Flatten every sheet to `cell | cell | cell` rows so a spreadsheet is
+    chunked + embedded like any other document."""
+    from openpyxl import load_workbook
+
+    wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+    try:
+        out: list[str] = []
+        for ws in wb.worksheets:
+            out.append(f"# Sheet: {ws.title}")
+            for row in ws.iter_rows(values_only=True):
+                cells = [str(c) for c in row if c is not None]
+                if cells:
+                    out.append(" | ".join(cells))
+        return "\n".join(out)
+    finally:
+        wb.close()
 
 
 def extract_text(filename: str, data: bytes) -> str:
@@ -34,7 +55,9 @@ def extract_text(filename: str, data: bytes) -> str:
 
         document = docx.Document(io.BytesIO(data))
         return "\n".join(p.text for p in document.paragraphs)
-    if ext in {"txt", "md", "markdown", ""}:
+    if ext == "xlsx":
+        return _xlsx_to_text(data)
+    if ext in {"txt", "md", "markdown", "csv", ""}:
         return data.decode("utf-8", errors="replace")
     raise ValueError(f"Unsupported file type: .{ext}")
 

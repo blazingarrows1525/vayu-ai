@@ -109,10 +109,10 @@ export default function ResearchPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">Knowledge sources</h2>
           <label className="cursor-pointer rounded-lg bg-vayu-accent px-3 py-1.5 text-sm font-semibold text-vayu-bg transition hover:bg-vayu-accent-2">
-            {uploading ? "Uploading…" : "Upload (PDF, DOCX, TXT, MD)"}
+            {uploading ? "Uploading…" : "Upload (PDF, DOCX, XLSX, CSV, TXT, MD)"}
             <input
               type="file"
-              accept=".pdf,.docx,.txt,.md"
+              accept=".pdf,.docx,.txt,.md,.csv,.xlsx"
               className="hidden"
               onChange={onUpload}
               disabled={uploading}
