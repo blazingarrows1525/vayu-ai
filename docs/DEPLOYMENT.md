@@ -22,6 +22,26 @@ docker build -f infra/docker/Dockerfile.ai  -t vayu-ai  .
 `.github/workflows/cd.yml` builds both on a tag / manual dispatch — wire the push + deploy
 steps to your registry and hosts.
 
+## CI / CD
+
+`.github/workflows/ci.yml` runs on every push to `main` and every PR:
+
+| Job | What it checks |
+|---|---|
+| **web** | `pnpm build` (Next.js typecheck + route gen) + `vitest` unit tests |
+| **ai** | `uv sync --frozen` → `ruff` lint → `pytest` |
+| **e2e** | Playwright against a real Postgres service — landing, auth redirect, and a full **signup → dashboard → research** journey |
+| **deploy** | on a green push to `main`, fires Render deploy hooks (opt-in) |
+
+**Wire CI-gated deploys** (so only green builds ship, instead of Render's blind auto-deploy):
+
+1. Render dashboard → each service → Settings → *Deploy Hook* → copy the URL.
+2. Repo → Settings → Secrets and variables → Actions → add `RENDER_DEPLOY_HOOK_WEB`
+   and `RENDER_DEPLOY_HOOK_AI`.
+3. Turn **off** Auto-Deploy on both Render services.
+
+Without those secrets the `deploy` job is a no-op, so CI stays green whether or not you opt in.
+
 ## Migrations
 
 ```bash
@@ -39,8 +59,8 @@ uv --directory apps/ai run alembic upgrade head  # AI tables + pgvector/HNSW
 | `AI_SERVICE_URL` | web | server-to-server URL of the AI plane |
 | `AUTH_JWKS_URL`, `AUTH_JWT_ISSUER`, `AUTH_JWT_AUDIENCE` | ai | verify Better Auth JWTs (`…/api/auth/jwks`) |
 | `ANTHROPIC_API_KEY` | ai | copilot / agents / RAG grounding |
-| `OPENAI_API_KEY` | ai | embeddings (`text-embedding-3-small`) |
-| `S3_*` | ai | object storage |
+| `VOYAGE_API_KEY` / `OPENAI_API_KEY` | ai | embeddings — Voyage `voyage-3` (default) or OpenAI |
+| `S3_*`, `MAX_UPLOAD_MB` | ai | object storage (opt-in) + upload size cap |
 | `SENTRY_DSN`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME` | both | observability (optional) |
 | `GITHUB_*`, `GOOGLE_*` | web | optional OAuth |
 
