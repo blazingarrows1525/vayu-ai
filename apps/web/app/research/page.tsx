@@ -167,8 +167,18 @@ export default function ResearchPage() {
               className="flex items-center justify-between rounded-lg border border-vayu-border bg-vayu-bg px-3 py-2 text-sm"
             >
               <span className="truncate">{s.title}</span>
-              <span className="ml-3 shrink-0 text-xs text-vayu-muted">
-                {s.sourceType} · {s.chunkCount} chunks · {s.status}
+              <span className="ml-3 flex shrink-0 items-center gap-2 text-xs text-vayu-muted">
+                {s.stored && (
+                  <span
+                    title="Original file saved to object storage"
+                    className="rounded bg-vayu-accent/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-vayu-accent"
+                  >
+                    saved
+                  </span>
+                )}
+                <span>
+                  {s.sourceType} · {s.chunkCount} chunks · {s.status}
+                </span>
               </span>
             </li>
           ))}

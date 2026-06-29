@@ -188,7 +188,8 @@ async def answer_question(
     embedder = Embedder(settings)
     if not embedder.available:
         return AskResult(
-            "Retrieval needs OPENAI_API_KEY for embeddings. Set it on the intelligence plane.",
+            f"Retrieval needs {embedder.key_env} for embeddings "
+            f"({settings.embedding_provider}). Set it on the intelligence plane.",
             0.0,
             [],
             {"model": embedder.active_model, "candidates": 0, "used": 0, "configured": False},

@@ -43,6 +43,11 @@ class Embedder:
         """The embedding model actually in use (provider-aware)."""
         return self._model
 
+    @property
+    def key_env(self) -> str:
+        """Env var that supplies this provider's API key (for setup hints)."""
+        return "VOYAGE_API_KEY" if self._provider == "voyage" else "OPENAI_API_KEY"
+
     async def embed(self, texts: list[str]) -> list[list[float]]:
         if not self._available:
             raise EmbeddingUnavailable(

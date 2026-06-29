@@ -107,31 +107,52 @@ export default function AgentsPage() {
         />
         <button
           onClick={run}
-          disabled={running}
+          disabled={running || !task.trim()}
           className="mt-3 rounded-lg bg-vayu-accent px-4 py-2 text-sm font-semibold text-vayu-bg transition hover:bg-vayu-accent-2 disabled:opacity-60"
         >
           {running ? "Running…" : "Run agent"}
         </button>
       </section>
 
+      {running && steps.length === 0 && (
+        <section className="mt-6 rounded-2xl border border-vayu-border bg-vayu-surface p-4">
+          <p className="animate-pulse text-sm text-vayu-muted">
+            Planning the run and gathering context…
+          </p>
+        </section>
+      )}
+
       {steps.length > 0 && (
         <section className="mt-6 flex flex-col gap-3">
-          {steps.map((s, i) => (
-            <div
-              key={`${s.node}-${i}`}
-              className="rounded-2xl border border-vayu-border bg-vayu-surface p-4"
-            >
-              <div className="flex items-center gap-2">
-                <span className="rounded-md bg-vayu-accent/15 px-2 py-0.5 text-xs font-semibold text-vayu-accent">
-                  {s.node}
-                </span>
-                <span className="text-xs text-vayu-muted">{s.tokens} tok</span>
+          {steps.map((s, i) => {
+            const isError = s.node === "error";
+            return (
+              <div
+                key={`${s.node}-${i}`}
+                className={`rounded-2xl border p-4 ${
+                  isError
+                    ? "border-red-500/40 bg-red-500/5"
+                    : "border-vayu-border bg-vayu-surface"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`rounded-md px-2 py-0.5 text-xs font-semibold ${
+                      isError
+                        ? "bg-red-500/15 text-red-400"
+                        : "bg-vayu-accent/15 text-vayu-accent"
+                    }`}
+                  >
+                    {s.node}
+                  </span>
+                  <span className="text-xs text-vayu-muted">{s.tokens} tok</span>
+                </div>
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-vayu-fg">
+                  {s.output}
+                </p>
               </div>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-vayu-fg">
-                {s.output}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </section>
       )}
     </main>
