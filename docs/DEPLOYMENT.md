@@ -50,6 +50,31 @@ Better Auth (web) serves JWKS at `/api/auth/jwks`. Point the AI plane's `AUTH_JW
 deployed web origin's JWKS path, and keep `AUTH_JWT_ISSUER`/`AUTH_JWT_AUDIENCE` identical on
 both planes. The AI plane caches keys and refetches on rotation — no shared secret.
 
+## Cold starts (free tier) & keeping warm
+
+Render's free tier spins a service down after ~15 min idle; the next request pays a 30–60s
+cold start. `.github/workflows/keepalive.yml` pings both planes every ~10 min to keep them
+warm — free, external, no worker burned. It's best-effort (GitHub cron has a 5-min floor and
+drifts under load, and scheduled workflows pause after 60 days of repo inactivity). For a hard
+guarantee, move the two web services to a paid Render tier and delete the workflow.
+
+Point the pinger at a different host by setting repo **Variables** `WEB_URL` / `AI_URL`
+(Settings → Secrets and variables → Actions → Variables) — no file edit needed.
+
+## Custom domain (Render)
+
+1. **Add the domain** — Render dashboard → `vayu-web` → Settings → *Custom Domains* → add
+   `app.yourdomain.com` (subdomain) or the apex `yourdomain.com`.
+2. **DNS** — at your registrar, add the record Render shows: `CNAME` → `vayu-web-r6dn.onrender.com`
+   for a subdomain, or an `ALIAS`/`A` record for an apex. Render auto-issues the TLS cert once
+   DNS verifies (a few minutes).
+3. **Re-point env** — on `vayu-web` set `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` to
+   `https://app.yourdomain.com`; on `vayu-ai` set `AUTH_JWKS_URL` to
+   `https://app.yourdomain.com/api/auth/jwks`. If you also domain the AI plane, update
+   `AI_SERVICE_URL` to match. Redeploy both.
+4. **Re-point keep-alive** — set the `WEB_URL` / `AI_URL` repo Variables to the new host so the
+   pinger follows the domain.
+
 ## Scaling notes
 
 - Both planes are **stateless** → scale horizontally behind a load balancer.

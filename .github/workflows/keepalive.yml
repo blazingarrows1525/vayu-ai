@@ -1,0 +1,44 @@
+name: keep-alive
+
+# Render's free tier spins a service down after ~15 min with no inbound traffic, so the
+# first hit afterwards pays a 30–60s cold start. A request every ~10 min resets that idle
+# timer and keeps both planes warm — for free, from an external scheduler, with no extra
+# worker burned on the dyno.
+#
+# Caveats (this is best-effort warmth, not an SLA):
+#   • GitHub cron has a 5-min floor and can be delayed several minutes under load.
+#   • GitHub disables scheduled workflows after 60 days with no repo activity.
+#   • For a guaranteed always-on service, move to a paid Render tier instead (and you can
+#     then delete this workflow).
+#
+# Override the targets without editing this file by setting repo Variables WEB_URL / AI_URL
+# (Settings → Secrets and variables → Actions → Variables) — e.g. after adding a custom domain.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # every 10 minutes (UTC)
+  workflow_dispatch: {}
+
+concurrency:
+  group: keep-alive
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping web plane
+        env:
+          WEB_URL: ${{ vars.WEB_URL || 'https://vayu-web-r6dn.onrender.com/' }}
+        run: |
+          curl -fsS -m 90 --retry 5 --retry-all-errors --retry-delay 15 \
+            -o /dev/null -w "web -> HTTP %{http_code} in %{time_total}s\n" "$WEB_URL"
+      - name: Ping intelligence plane
+        env:
+          AI_URL: ${{ vars.AI_URL || 'https://vayu-ai-r6dn.onrender.com/v1/health' }}
+        run: |
+          curl -fsS -m 90 --retry 5 --retry-all-errors --retry-delay 15 \
+            -o /dev/null -w "ai  -> HTTP %{http_code} in %{time_total}s\n" "$AI_URL"
