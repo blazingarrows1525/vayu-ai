@@ -28,3 +28,4 @@ the big picture and resume guide.
 | 20 | Chat / conversation persistence | [phase-20-chat.md](phase-20-chat.md) | ✅ |
 | 21 | Vector-store adapters (Qdrant/Pinecone/Chroma) | [phase-21-vectorstore.md](phase-21-vectorstore.md) | ✅ |
 | 22 | Playwright e2e scaffold | [phase-22-e2e.md](phase-22-e2e.md) | ✅ |
+| 23 | Dockerized run + Render deploy (live) | [phase-23-deploy.md](phase-23-deploy.md) | ✅ |
