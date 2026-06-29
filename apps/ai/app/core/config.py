@@ -68,6 +68,9 @@ class Settings(BaseSettings):
     pinecone_api_key: str | None = None
     pinecone_index_host: str | None = None
 
+    # Uploads — reject anything larger (protects the worker's memory on small dynos).
+    max_upload_mb: int = 25
+
     # Object storage
     s3_endpoint: str = "http://localhost:9000"
     s3_region: str = "us-east-1"

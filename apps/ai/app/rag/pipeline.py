@@ -53,6 +53,7 @@ async def ingest_document(
     title: str,
     source_type: str,
     text: str,
+    storage_key: str | None = None,
 ) -> KnowledgeSource:
     chunks = chunk_text(text)
     source = KnowledgeSource(
@@ -60,6 +61,7 @@ async def ingest_document(
         document_id=_opt_uuid(document_id),
         title=title,
         source_type=source_type,
+        storage_key=storage_key,
         created_by=_opt_uuid(created_by),
         status="processing",
         chunk_count=len(chunks),

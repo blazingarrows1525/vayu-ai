@@ -33,6 +33,7 @@ from app.rag.pipeline import (
     related_sources,
     semantic_search,
 )
+from app.services.storage import ObjectStorage
 
 
 async def _is_public_url(url: str) -> bool:
@@ -104,6 +105,7 @@ def _source_json(s: KnowledgeSource) -> dict:
         "chunkCount": s.chunk_count,
         "tokenCount": s.token_count,
         "sourceType": s.source_type,
+        "stored": bool(s.storage_key),
         "createdAt": s.created_at.isoformat() if s.created_at else None,
     }
 
@@ -119,10 +121,25 @@ async def ingest(
 ) -> dict:
     workspace_id = require_workspace(principal)
     data = await file.read()
+    max_bytes = settings.max_upload_mb * 1024 * 1024
+    if len(data) > max_bytes:
+        raise HTTPException(
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            f"File is {len(data) // (1024 * 1024)}MB; the limit is {settings.max_upload_mb}MB.",
+        )
     try:
         text = extract_text(file.filename or "", data)
     except ValueError as exc:
         raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, str(exc)) from exc
+
+    # Persist the original file to object storage when configured (opt-in, best-effort).
+    storage = ObjectStorage(settings)
+    storage_key: str | None = None
+    if storage.available:
+        key = f"{workspace_id}/{uuid.uuid4()}/{file.filename or 'upload'}"
+        storage_key = await storage.put(
+            key, data, file.content_type or "application/octet-stream"
+        )
 
     source = await ingest_document(
         session,
@@ -133,6 +150,7 @@ async def ingest(
         title=title or file.filename or "Untitled",
         source_type=detect_source_type(file.filename or ""),
         text=text,
+        storage_key=storage_key,
     )
     return _source_json(source)
 
@@ -212,6 +230,32 @@ async def get_source(
     if source is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Knowledge source not found")
     return _source_json(source)
+
+
+@router.get("/knowledge/{source_id}/raw")
+async def raw_file(
+    source_id: str,
+    principal: Principal = Depends(get_principal),
+    session: AsyncSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> dict:
+    """Short-lived signed URL to download the original uploaded file (if stored)."""
+    workspace_id = require_workspace(principal)
+    result = await session.execute(
+        select(KnowledgeSource).where(
+            KnowledgeSource.id == uuid.UUID(source_id),
+            KnowledgeSource.workspace_id == uuid.UUID(workspace_id),
+        )
+    )
+    source = result.scalar_one_or_none()
+    if source is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Knowledge source not found")
+    if not source.storage_key:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No raw file stored for this source")
+    url = await ObjectStorage(settings).presigned_get_url(source.storage_key)
+    if not url:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Object storage is not configured")
+    return {"url": url}
 
 
 @router.post("/search")

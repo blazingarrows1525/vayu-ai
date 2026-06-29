@@ -9,6 +9,7 @@ interface Source {
   status: string;
   chunkCount: number;
   sourceType: string;
+  stored?: boolean;
 }
 
 interface Citation {
@@ -25,6 +26,8 @@ interface AskResult {
   retrieval: { model: string; candidates: number; used: number };
 }
 
+const MAX_UPLOAD_MB = 25;
+
 export default function ResearchPage() {
   const [sources, setSources] = useState<Source[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -33,6 +36,7 @@ export default function ResearchPage() {
   const [query, setQuery] = useState("");
   const [asking, setAsking] = useState(false);
   const [result, setResult] = useState<AskResult | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const loadSources = useCallback(async () => {
     const res = await fetch("/api/research/sources");
@@ -46,12 +50,25 @@ export default function ResearchPage() {
   async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+      setNotice(`"${file.name}" is too large — the limit is ${MAX_UPLOAD_MB}MB.`);
+      e.target.value = "";
+      return;
+    }
+    setNotice(null);
     setUploading(true);
     try {
       const form = new FormData();
       form.append("file", file);
       form.append("title", file.name);
-      await fetch("/api/research/upload", { method: "POST", body: form });
+      const res = await fetch("/api/research/upload", { method: "POST", body: form });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as {
+          detail?: string;
+          error?: string;
+        };
+        setNotice(data.detail ?? data.error ?? "Upload failed. Please try again.");
+      }
       await loadSources();
     } finally {
       setUploading(false);
@@ -109,10 +126,10 @@ export default function ResearchPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">Knowledge sources</h2>
           <label className="cursor-pointer rounded-lg bg-vayu-accent px-3 py-1.5 text-sm font-semibold text-vayu-bg transition hover:bg-vayu-accent-2">
-            {uploading ? "Uploading…" : "Upload (PDF, DOCX, XLSX, CSV, TXT, MD)"}
+            {uploading ? "Uploading…" : "Upload (PDF, DOCX, PPTX, XLSX, CSV, TXT, MD)"}
             <input
               type="file"
-              accept=".pdf,.docx,.txt,.md,.csv,.xlsx"
+              accept=".pdf,.docx,.pptx,.txt,.md,.csv,.xlsx"
               className="hidden"
               onChange={onUpload}
               disabled={uploading}
@@ -135,6 +152,11 @@ export default function ResearchPage() {
             {addingUrl ? "Adding…" : "Add URL"}
           </button>
         </div>
+        {notice && (
+          <p className="mt-3 rounded-lg border border-vayu-border bg-vayu-bg px-3 py-2 text-xs text-vayu-muted">
+            {notice}
+          </p>
+        )}
         <ul className="mt-4 flex flex-col gap-2">
           {sources.length === 0 && (
             <li className="text-sm text-vayu-muted">No sources yet — upload a document.</li>

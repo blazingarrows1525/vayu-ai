@@ -8,6 +8,7 @@ from html.parser import HTMLParser
 _EXT_TO_TYPE = {
     "pdf": "pdf",
     "docx": "docx",
+    "pptx": "pptx",
     "md": "md",
     "markdown": "md",
     "txt": "txt",
@@ -43,6 +44,33 @@ def _xlsx_to_text(data: bytes) -> str:
         wb.close()
 
 
+def _pptx_to_text(data: bytes) -> str:
+    """Flatten a slide deck: each slide's shape text, table cells, and speaker
+    notes become plain text under a `# Slide N` header so a deck is chunked +
+    embedded like any other document."""
+    from pptx import Presentation
+
+    prs = Presentation(io.BytesIO(data))
+    out: list[str] = []
+    for index, slide in enumerate(prs.slides, start=1):
+        out.append(f"# Slide {index}")
+        for shape in slide.shapes:
+            if shape.has_table:
+                for row in shape.table.rows:
+                    cells = [cell.text.strip() for cell in row.cells]
+                    if any(cells):
+                        out.append(" | ".join(cells))
+            elif shape.has_text_frame:
+                text = shape.text_frame.text.strip()
+                if text:
+                    out.append(text)
+        if slide.has_notes_slide:
+            notes = slide.notes_slide.notes_text_frame.text.strip()
+            if notes:
+                out.append(f"Notes: {notes}")
+    return "\n".join(out)
+
+
 def extract_text(filename: str, data: bytes) -> str:
     ext = _ext(filename)
     if ext == "pdf":
@@ -55,6 +83,8 @@ def extract_text(filename: str, data: bytes) -> str:
 
         document = docx.Document(io.BytesIO(data))
         return "\n".join(p.text for p in document.paragraphs)
+    if ext == "pptx":
+        return _pptx_to_text(data)
     if ext == "xlsx":
         return _xlsx_to_text(data)
     if ext in {"txt", "md", "markdown", "csv", ""}:

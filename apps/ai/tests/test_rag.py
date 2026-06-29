@@ -25,3 +25,20 @@ def test_chunking_splits_long_text() -> None:
 def test_parsing_plaintext_and_type() -> None:
     assert detect_source_type("notes.md") == "md"
     assert extract_text("notes.txt", b"hello world") == "hello world"
+
+
+def test_pptx_extraction() -> None:
+    import io
+
+    from pptx import Presentation
+
+    prs = Presentation()
+    slide = prs.slides.add_slide(prs.slide_layouts[6])  # blank layout
+    box = slide.shapes.add_textbox(0, 0, 914400, 914400)  # 1in x 1in (EMU)
+    box.text_frame.text = "Quarterly revenue grew 30 percent"
+    buf = io.BytesIO()
+    prs.save(buf)
+
+    assert detect_source_type("deck.pptx") == "pptx"
+    text = extract_text("deck.pptx", buf.getvalue())
+    assert "Quarterly revenue grew 30 percent" in text

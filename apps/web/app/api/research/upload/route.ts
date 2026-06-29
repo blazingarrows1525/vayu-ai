@@ -18,5 +18,8 @@ export async function POST(req: Request) {
     body: form,
   });
   const data = await res.json().catch(() => ({}));
-  return Response.json(data, { status: res.ok ? 200 : 502 });
+  // Forward client errors (413 too-large, 415 unsupported) so the UI can show them;
+  // collapse anything else to 502 (the AI plane is unreachable / errored).
+  const status = res.ok ? 200 : res.status >= 400 && res.status < 500 ? res.status : 502;
+  return Response.json(data, { status });
 }
