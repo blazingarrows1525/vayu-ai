@@ -279,3 +279,15 @@ def get_vector_store(settings: Settings) -> VectorStore | None:
     if cls is None:
         raise ValueError(f"unknown vector store: {name}")
     return cls(settings)
+
+
+def vector_store_status(settings: Settings) -> dict:
+    """Configured vector store + availability (for /v1/providers + startup checks)."""
+    name = settings.vector_store or "pgvector"
+    if name in ("", "pgvector"):
+        return {"store": "pgvector", "external": False, "available": True}
+    try:
+        store = get_vector_store(settings)
+    except ValueError:
+        return {"store": name, "external": True, "available": False, "error": "unknown store"}
+    return {"store": name, "external": True, "available": bool(store and store.available)}

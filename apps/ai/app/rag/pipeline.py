@@ -6,6 +6,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 
+import structlog
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,8 +14,11 @@ from app.core.config import Settings
 from app.db.models import Embedding, KnowledgeSource
 from app.rag.chunking import chunk_text, estimate_tokens
 from app.rag.retrieval import compress, cosine, mmr_rerank, reciprocal_rank_fusion
+from app.rag.vectorstore import VectorHit, VectorRecord, get_vector_store
 from app.services.embeddings import Embedder
 from app.services.llm import LLMError, LLMUnavailable, generate
+
+log = structlog.get_logger(__name__)
 
 _GROUND_SYSTEM = (
     "You are VAYU's research assistant. Answer the question using ONLY the numbered "
@@ -86,12 +90,99 @@ async def ingest_document(
                     meta={},
                 )
             )
+        await _mirror_to_vector_store(settings, source, chunks, vectors)
         source.status = "ready"
     else:
         source.status = "ready" if embedder.available else "pending_embeddings"
 
     await session.commit()
     return source
+
+
+async def _mirror_to_vector_store(
+    settings: Settings, source: KnowledgeSource, chunks: list[str], vectors: list[list[float]]
+) -> None:
+    """Best-effort dual-write to an external vector store when VECTOR_STORE != pgvector.
+    Postgres stays the system of record (keeps hybrid keyword search + citations); the
+    external store enables vector retrieval at scale. Never breaks ingestion."""
+    store = _external_store_or_none(settings)
+    if store is None or not vectors:
+        return
+    records = [
+        VectorRecord(
+            id=f"{source.id}:{i}",
+            vector=[float(x) for x in vec],
+            content=content,
+            workspace_id=str(source.workspace_id),
+            source_id=str(source.id),
+            chunk_index=i,
+            document_id=str(source.document_id) if source.document_id else None,
+        )
+        for i, (content, vec) in enumerate(zip(chunks, vectors, strict=True))
+    ]
+    try:
+        await store.ensure(len(vectors[0]))
+        await store.upsert(records)
+    except Exception as exc:  # noqa: BLE001 - external storage is best-effort
+        log.warning("vector_store_upsert_failed", store=store.name, error=str(exc))
+
+
+def _external_store_or_none(settings: Settings):
+    """The configured external store if usable, else None (→ fall back to pgvector).
+    Logs a helpful warning when a store is selected but misconfigured/unavailable."""
+    try:
+        store = get_vector_store(settings)
+    except ValueError as exc:
+        log.warning("vector_store_misconfigured", error=str(exc))
+        return None
+    if store is not None and not store.available:
+        log.warning("vector_store_unavailable", store=store.name)
+        return None
+    return store
+
+
+async def _answer_from_hits(
+    settings: Settings, query: str, hits: list[VectorHit], store_name: str
+) -> AskResult:
+    """Ground an answer from external vector-store hits (Qdrant/Chroma/Pinecone)."""
+    if not hits:
+        return AskResult(
+            "No relevant context found in your knowledge sources.",
+            0.0, [], {"model": store_name, "candidates": 0, "used": 0, "mode": store_name},
+        )
+    compressed = compress([(h.id, h.content) for h in hits], settings.rag_max_context_chars)
+    by_id = {h.id: h for h in hits}
+    context = "\n\n".join(f"[{i + 1}] {text}" for i, (_, text) in enumerate(compressed))
+    try:
+        answer, _ = await generate(
+            settings,
+            system=_GROUND_SYSTEM,
+            prompt=f"Question: {query}\n\nSources:\n{context}",
+            max_tokens=1024,
+        )
+    except (LLMUnavailable, LLMError):
+        answer = (
+            "Retrieved relevant context (see citations). Configure a model provider key "
+            "to generate a grounded answer from it."
+        )
+    citations: list[Citation] = []
+    scores: list[float] = []
+    for cid, text in compressed:
+        hit = by_id[cid]
+        score = round(max(0.0, hit.score), 3)
+        scores.append(score)
+        citations.append(
+            Citation(source_id=hit.source_id, chunk_index=hit.chunk_index, score=score, snippet=text[:240])
+        )
+    return AskResult(
+        answer=answer,
+        confidence=_confidence_from_scores(scores),
+        citations=citations,
+        retrieval={
+            "model": store_name, "candidates": len(hits),
+            "used": len(compressed), "mode": store_name,
+        },
+    )
 
 
 async def retrieve(
@@ -197,6 +288,13 @@ async def answer_question(
 
     query_vec = await embedder.embed_one(query)
 
+    external = _external_store_or_none(settings)
+    if external is not None:
+        hits = await external.query(
+            workspace_id=workspace_id, vector=query_vec, top_k=top_k, source_ids=source_scope
+        )
+        return await _answer_from_hits(settings, query, hits, external.name)
+
     if settings.rag_hybrid:
         embeddings = await hybrid_retrieve(
             session,
@@ -283,6 +381,24 @@ async def semantic_search(
     if not embedder.available:
         return None
     query_vec = await embedder.embed_one(query)
+
+    external = _external_store_or_none(settings)
+    if external is not None:
+        hits = await external.query(
+            workspace_id=workspace_id, vector=query_vec, top_k=top_k, source_ids=None
+        )
+        grouped: dict[str, dict] = {}
+        for hit in hits:
+            sid = hit.source_id
+            if sid not in grouped:
+                grouped[sid] = {
+                    "sourceId": sid, "score": round(max(0.0, hit.score), 3),
+                    "snippet": hit.content[:200], "hits": 1,
+                }
+            else:
+                grouped[sid]["hits"] += 1
+        return list(grouped.values())
+
     rows = await retrieve(session, workspace_id, query_vec, top_k, None)
 
     by_source: dict[str, dict] = {}

@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends
 
 from app import __version__
 from app.core.config import Settings, get_settings
+from app.rag.vectorstore import vector_store_status
 from app.services.llm import provider_status
+from app.services.storage import ObjectStorage
 
 router = APIRouter()
 
@@ -30,4 +32,6 @@ async def providers(settings: Settings = Depends(get_settings)) -> dict:
                 else settings.voyage_api_key
             ),
         },
+        "vector_store": vector_store_status(settings),
+        "storage": {"provider": "s3", "available": ObjectStorage(settings).available},
     }
