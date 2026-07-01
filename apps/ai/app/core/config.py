@@ -73,8 +73,9 @@ class Settings(BaseSettings):
     # Uploads — reject anything larger (protects the worker's memory on small dynos).
     max_upload_mb: int = 25
 
-    # Object storage
-    s3_endpoint: str = "http://localhost:9000"
+    # Object storage. s3_endpoint blank = real AWS S3 (regional endpoint); set it for a local
+    # MinIO (http://localhost:9000) or an S3-compatible host (Cloudflare R2 / Backblaze B2).
+    s3_endpoint: str = ""
     s3_region: str = "us-east-1"
     s3_bucket: str = "vayu"
     s3_access_key_id: str | None = None

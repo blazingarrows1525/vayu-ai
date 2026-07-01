@@ -60,7 +60,12 @@ class ObjectStorage:
         try:
             client.head_bucket(Bucket=self._bucket)
         except ClientError:
-            client.create_bucket(Bucket=self._bucket)
+            params: dict = {"Bucket": self._bucket}
+            region = self._settings.s3_region
+            # AWS requires a LocationConstraint for every region except us-east-1.
+            if region and region != "us-east-1":
+                params["CreateBucketConfiguration"] = {"LocationConstraint": region}
+            client.create_bucket(**params)
         self._bucket_ready = True
 
     async def put(self, key: str, data: bytes, content_type: str) -> str | None:
