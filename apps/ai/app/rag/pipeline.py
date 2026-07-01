@@ -14,7 +14,7 @@ from app.db.models import Embedding, KnowledgeSource
 from app.rag.chunking import chunk_text, estimate_tokens
 from app.rag.retrieval import compress, cosine, mmr_rerank, reciprocal_rank_fusion
 from app.services.embeddings import Embedder
-from app.services.llm import LLMUnavailable, resolve_llm
+from app.services.llm import LLMError, LLMUnavailable, generate
 
 _GROUND_SYSTEM = (
     "You are VAYU's research assistant. Answer the question using ONLY the numbered "
@@ -230,13 +230,13 @@ async def answer_question(
     context = "\n\n".join(f"[{i + 1}] {text}" for i, (_, text) in enumerate(compressed))
 
     try:
-        provider = resolve_llm(settings)
-        answer, _ = await provider.complete(
+        answer, _ = await generate(
+            settings,
             system=_GROUND_SYSTEM,
             prompt=f"Question: {query}\n\nSources:\n{context}",
             max_tokens=1024,
         )
-    except LLMUnavailable:
+    except (LLMUnavailable, LLMError):
         answer = (
             "Retrieved relevant context (see citations). Configure a model provider key "
             "to generate a grounded answer from it."

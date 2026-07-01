@@ -20,7 +20,7 @@ from app.core.config import Settings, get_settings
 from app.core.prompts import SUPPORTED_COMMANDS, build_prompt
 from app.core.security import Principal, get_principal, require_workspace
 from app.services.cache import cache_get, cache_set
-from app.services.llm import LLMUnavailable, Usage, resolve_llm
+from app.services.llm import LLMUnavailable, Usage, resolve_llm, stream_generate
 
 router = APIRouter()
 
@@ -103,8 +103,10 @@ async def _generate(
 
     collected: list[str] = []
     try:
-        async for kind, payload in provider.stream(
-            system=system, prompt=user, model=requested_model
+        # stream_generate adds cross-provider fallback (before the first token).
+        async for kind, payload in stream_generate(
+            settings, system=system, prompt=user,
+            preferred=req.provider, model=requested_model,
         ):
             if kind == "token" and isinstance(payload, str):
                 collected.append(payload)
@@ -118,6 +120,8 @@ async def _generate(
                      "costUsd": payload.cost_usd, "model": payload.model,
                      "provider": payload.provider},
                 )
+            elif kind == "error" and isinstance(payload, str):
+                yield _sse("error", {"message": payload})
     except Exception as exc:  # noqa: BLE001 - surface provider errors to the client
         yield _sse("error", {"message": str(exc)})
 

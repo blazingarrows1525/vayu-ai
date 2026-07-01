@@ -44,9 +44,11 @@ class Settings(BaseSettings):
     default_chat_model: str = "claude-sonnet-4-6"
     # Per-provider default models (used when a request doesn't pin one).
     openai_chat_model: str = "gpt-4o-mini"
-    gemini_chat_model: str = "gemini-2.0-flash"
+    gemini_chat_model: str = "gemini-2.5-pro"
     groq_chat_model: str = "llama-3.3-70b-versatile"
     openrouter_chat_model: str = "anthropic/claude-3.5-sonnet"
+    # Transient-error retries per LLM call (429 / 5xx / timeouts) — the SDK clients back off.
+    llm_max_retries: int = 2
 
     # Embeddings
     embedding_provider: str = "openai"  # openai | voyage
