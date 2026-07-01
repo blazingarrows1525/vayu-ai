@@ -59,8 +59,10 @@ uv --directory apps/ai run alembic upgrade head  # AI tables + pgvector/HNSW
 | `AI_SERVICE_URL` | web | server-to-server URL of the AI plane |
 | `AUTH_JWKS_URL`, `AUTH_JWT_ISSUER`, `AUTH_JWT_AUDIENCE` | ai | verify Better Auth JWTs (`…/api/auth/jwks`) |
 | `ANTHROPIC_API_KEY` | ai | copilot / agents / RAG grounding |
+| `GEMINI_API_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY` | ai | extra LLM providers (cross-provider fallback) — [PROVIDERS.md](PROVIDERS.md) |
 | `VOYAGE_API_KEY` / `OPENAI_API_KEY` | ai | embeddings — Voyage `voyage-3` (default) or OpenAI |
-| `S3_*`, `MAX_UPLOAD_MB` | ai | object storage (opt-in) + upload size cap |
+| `VECTOR_STORE`, `QDRANT_*`, `CHROMA_URL`, `PINECONE_*` | ai | vector store (default `pgvector`) — [PROVIDERS.md](PROVIDERS.md) |
+| `S3_*`, `MAX_UPLOAD_MB` | ai | object storage (opt-in) + upload cap — [AWS_S3_SETUP.md](AWS_S3_SETUP.md) |
 | `SENTRY_DSN`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME` | both | observability (optional) |
 | `GITHUB_*`, `GOOGLE_*` | web | optional OAuth |
 
