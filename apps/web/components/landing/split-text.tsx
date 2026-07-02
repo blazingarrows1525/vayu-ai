@@ -38,12 +38,14 @@ export function SplitText({ text, className = "" }: { text: string; className?: 
         variants={container}
         initial="hidden"
         animate="show"
-        className={`inline-block ${className}`}
+        className="inline-block"
         style={{ perspective: 700 }}
       >
         {words.map((w, i) => (
           <span key={`${w}-${i}`} className="inline-block overflow-hidden pb-[0.12em] align-top">
-            <motion.span variants={word} className="inline-block will-transform">
+            {/* className per word: background-clip:text breaks across transformed
+                descendants, so a container-level .text-gradient renders invisible. */}
+            <motion.span variants={word} className={`inline-block will-transform ${className}`}>
               {w}
               {i < words.length - 1 ? " " : ""}
             </motion.span>

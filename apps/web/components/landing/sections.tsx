@@ -5,6 +5,7 @@ import { capabilities } from "@/lib/site";
 import { CountUp } from "./count-up";
 import { GlowButton } from "./glow-button";
 import { Magnetic } from "./magnetic";
+import { ScrambleText } from "./scramble-text";
 import { TiltCard } from "./tilt-card";
 
 const rise = {
@@ -25,7 +26,9 @@ function SectionTitle({ kicker, title }: { kicker: string; title: string }) {
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       className="mx-auto max-w-2xl text-center"
     >
-      <p className="text-xs font-medium uppercase tracking-[0.3em] text-vayu-accent">{kicker}</p>
+      <p className="text-xs font-medium uppercase tracking-[0.3em] text-vayu-accent">
+        <ScrambleText text={kicker} />
+      </p>
       <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">{title}</h2>
     </motion.div>
   );

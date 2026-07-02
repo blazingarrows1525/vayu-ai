@@ -7,6 +7,7 @@ import {
 } from "@/components/landing/sections";
 import { ScrollProgress } from "@/components/landing/scroll-progress";
 import { SmoothScroll } from "@/components/landing/smooth-scroll";
+import { Story } from "@/components/landing/story";
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
       <main className="relative">
         <Hero />
         <Capabilities />
+        <Story />
         <Stats />
         <Architecture />
         <FinaleCTA />
