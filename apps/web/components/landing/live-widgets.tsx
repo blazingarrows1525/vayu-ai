@@ -52,7 +52,8 @@ function Dot({ tone = "success" }: { tone?: "success" | "accent" }) {
 
 export function LiveWidgets() {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 select-none [&>*]:pointer-events-auto">
+    // Desktop-only flourish: on small screens these cards collide with the dock.
+    <div aria-hidden className="pointer-events-none absolute inset-0 hidden select-none md:block [&>*]:pointer-events-auto">
       {/* agents online */}
       <FloatCard className="left-[-8%] top-[8%]" delay={0.15} duration={6.5}>
         <div className="flex items-center gap-2.5">

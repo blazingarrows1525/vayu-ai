@@ -29,13 +29,14 @@ const ACCENT = "#38bdf8";
 const VIOLET = "#8b5cf6";
 const CYAN = "#22d3ee";
 
-function AICore() {
+function AICore({ still = false }: { still?: boolean }) {
   const group = useRef<THREE.Group>(null);
   const cage = useRef<THREE.Mesh>(null);
   const orbitA = useRef<THREE.Group>(null);
   const orbitB = useRef<THREE.Group>(null);
 
   useFrame((state, dt) => {
+    if (still) return; // prefers-reduced-motion: render, don't animate
     const { pointer, clock } = state;
     const t = clock.elapsedTime;
     if (group.current) {
@@ -58,7 +59,7 @@ function AICore() {
   return (
     <group ref={group}>
       {/* breathing distorted core */}
-      <Float speed={1.6} rotationIntensity={0.35} floatIntensity={0.9}>
+      <Float speed={still ? 0 : 1.6} rotationIntensity={still ? 0 : 0.35} floatIntensity={still ? 0 : 0.9}>
         <mesh>
           <sphereGeometry args={[1.05, 64, 64]} />
           <MeshDistortMaterial
@@ -102,7 +103,7 @@ function AICore() {
       </group>
 
       {/* token field */}
-      <Sparkles count={110} scale={6.5} size={2.2} speed={0.35} opacity={0.5} color={ACCENT} />
+      <Sparkles count={110} scale={6.5} size={2.2} speed={still ? 0 : 0.35} opacity={0.5} color={ACCENT} />
     </group>
   );
 }
@@ -111,6 +112,12 @@ export default function HeroScene() {
   // Bloom only on fine-pointer devices; PerformanceMonitor degrades dpr under load.
   const [effects, setEffects] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches,
+  );
+  const still = useMemo(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    [],
   );
   const [dpr, setDpr] = useState<number>(1.5);
   const maxDpr = useMemo(
@@ -136,7 +143,7 @@ export default function HeroScene() {
         <ambientLight intensity={0.35} />
         <directionalLight position={[4, 3, 5]} intensity={1.1} color={ACCENT} />
         <directionalLight position={[-5, -2, -4]} intensity={0.5} color={VIOLET} />
-        <AICore />
+        <AICore still={still} />
         <ContactShadows position={[0, -2.2, 0]} opacity={0.4} scale={9} blur={2.8} far={4} />
         {effects && (
           <EffectComposer multisampling={0}>
