@@ -161,6 +161,7 @@ export function Waves({
     const onTouchMove = (e: TouchEvent) => {
         e.preventDefault()
         const touch = e.touches[0]
+        if (!touch) return
         updateMousePosition(touch.clientX, touch.clientY)
     }
 
@@ -255,12 +256,12 @@ export function Waves({
             if (points.length < 2 || !paths[lIndex]) return;
 
             // First point
-            const firstPoint = moved(points[0], false)
+            const firstPoint = moved(points[0] as Point, false)
             let d = `M ${firstPoint.x} ${firstPoint.y}`
 
             // Connect points with lines
             for (let i = 1; i < points.length; i++) {
-                const current = moved(points[i])
+                const current = moved(points[i] as Point)
                 d += `L ${current.x} ${current.y}`
             }
 
