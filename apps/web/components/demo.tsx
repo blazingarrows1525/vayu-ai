@@ -22,5 +22,3 @@ export function WavesDemo() {
     </div>
   )
 }
-
-export { WavesDemo }
