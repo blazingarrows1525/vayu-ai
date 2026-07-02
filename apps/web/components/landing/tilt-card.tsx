@@ -27,7 +27,8 @@ export function TiltCard({
   const ry = useSpring(0, { stiffness: 220, damping: 18 });
   const sx = useSpring(50, { stiffness: 160, damping: 20 });
   const sy = useSpring(50, { stiffness: 160, damping: 20 });
-  const sheen = useMotionTemplate`radial-gradient(320px circle at ${sx}% ${sy}%, color-mix(in oklab, var(--color-vayu-accent) 14%, transparent), transparent 65%)`;
+  const sheen = useMotionTemplate`radial-gradient(400px circle at ${sx}% ${sy}%, color-mix(in oklab, var(--color-vayu-accent) 25%, transparent), transparent 75%)`;
+  const glare = useMotionTemplate`radial-gradient(300px circle at ${sx}% ${sy}%, rgba(255,255,255,0.06), transparent 50%)`;
 
   function onMove(e: React.PointerEvent) {
     if (reduced || e.pointerType !== "mouse" || !ref.current) return;
@@ -59,6 +60,11 @@ export function TiltCard({
         aria-hidden
         className="pointer-events-none absolute inset-0 rounded-[inherit]"
         style={{ background: sheen }}
+      />
+      <motion.span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[inherit] mix-blend-overlay"
+        style={{ background: glare }}
       />
       {children}
     </motion.div>

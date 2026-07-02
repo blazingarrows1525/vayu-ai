@@ -44,9 +44,10 @@ export function GlowButton({
       onClick={onClick}
       whileHover={reduced ? undefined : { scale: 1.045, y: -2, rotate: -0.4 }}
       whileTap={reduced ? undefined : { scale: 0.96, y: 0 }}
-      transition={{ type: "spring", stiffness: 420, damping: 22 }}
-      className={`${base} ${skin} ${className}`}
+      transition={{ type: "spring", stiffness: 450, damping: 20 }}
+      className={`${base} ${skin} group ${className}`}
     >
+      <span aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent)] animate-[shimmer_3s_infinite] opacity-80 group-hover:opacity-0 transition-opacity duration-300" />
       {children}
       {ripples.map((r) => (
         <span

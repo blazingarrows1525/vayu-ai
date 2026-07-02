@@ -21,6 +21,7 @@ import {
   MeshDistortMaterial,
   PerformanceMonitor,
   Sparkles,
+  Environment,
 } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import * as THREE from "three";
@@ -28,6 +29,7 @@ import * as THREE from "three";
 const ACCENT = "#38bdf8";
 const VIOLET = "#8b5cf6";
 const CYAN = "#22d3ee";
+const PINK = "#f472b6";
 
 function AICore({ still = false }: { still?: boolean }) {
   const group = useRef<THREE.Group>(null);
@@ -140,14 +142,16 @@ export default function HeroScene() {
           setEffects(false); // shed bloom before shedding resolution feel
         }}
       >
-        <ambientLight intensity={0.35} />
+        <ambientLight intensity={0.45} />
         <directionalLight position={[4, 3, 5]} intensity={1.1} color={ACCENT} />
         <directionalLight position={[-5, -2, -4]} intensity={0.5} color={VIOLET} />
+        <directionalLight position={[0, -5, 2]} intensity={0.6} color={PINK} />
+        <Environment preset="city" />
         <AICore still={still} />
         <ContactShadows position={[0, -2.2, 0]} opacity={0.4} scale={9} blur={2.8} far={4} />
         {effects && (
           <EffectComposer multisampling={0}>
-            <Bloom intensity={0.55} luminanceThreshold={0.32} luminanceSmoothing={0.65} mipmapBlur />
+            <Bloom intensity={0.65} luminanceThreshold={0.25} luminanceSmoothing={0.7} mipmapBlur />
           </EffectComposer>
         )}
       </PerformanceMonitor>

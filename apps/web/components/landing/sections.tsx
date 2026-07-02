@@ -91,13 +91,13 @@ const PLANES = [
   {
     name: "Product plane",
     tech: "Next.js 16 · React 19 · Better Auth · Drizzle",
-    desc: "The surface you touch — editor, research, agents, vault. Server-rendered, session-guarded, instant.",
+    desc: "The surface you touch — an immersive editor, deep research tools, and an agentic vault. Server-rendered, session-guarded, and relentlessly fast.",
     accent: "accent" as const,
   },
   {
     name: "Intelligence plane",
     tech: "FastAPI · pgvector · LangGraph · 5 LLM providers",
-    desc: "The engine underneath — hybrid retrieval, streaming copilot, agent graphs. Stateless JWT bridge, independently scalable.",
+    desc: "The cognitive engine — hybrid retrieval, streaming generation, and autonomous graphs. Connected via a stateless JWT bridge, infinitely scalable.",
     accent: "violet" as const,
   },
 ];
@@ -105,7 +105,7 @@ const PLANES = [
 export function Architecture() {
   return (
     <section className="mx-auto w-full max-w-6xl px-6 pb-28" data-story>
-      <SectionTitle kicker="Two planes, one bridge" title="Built like infrastructure, feels like magic" />
+      <SectionTitle kicker="Enterprise Architecture" title="Built like infrastructure. Feels like magic." />
       <div className="mt-14 grid gap-6 lg:grid-cols-2">
         {PLANES.map((p, i) => (
           <motion.div
@@ -151,7 +151,7 @@ export function Architecture() {
         className="mx-auto mt-6 h-[2px] w-2/3 origin-center rounded bg-[linear-gradient(90deg,transparent,var(--color-vayu-accent),var(--color-vayu-violet),transparent)]"
       />
       <p className="mt-3 text-center text-xs text-vayu-muted">
-        Stateless JWT bridge — signed by the product plane, verified via JWKS by the intelligence plane.
+        Stateless JWT bridge — minted by the product plane, cryptographically verified by the intelligence plane.
       </p>
     </section>
   );

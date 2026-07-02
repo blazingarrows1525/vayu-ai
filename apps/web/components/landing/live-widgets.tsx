@@ -51,6 +51,7 @@ function Dot({ tone = "success" }: { tone?: "success" | "accent" }) {
 }
 
 export function LiveWidgets() {
+  const reduced = useReducedMotion();
   return (
     // Desktop-only flourish: on small screens these cards collide with the dock.
     <div aria-hidden className="pointer-events-none absolute inset-0 hidden select-none md:block [&>*]:pointer-events-auto">
@@ -116,6 +117,36 @@ export function LiveWidgets() {
               />
             ))}
           </span>
+        </div>
+      </FloatCard>
+
+      {/* vector search pipeline */}
+      <FloatCard className="top-[45%] left-[-12%]" delay={0.65} duration={7.5}>
+        <div className="flex flex-col gap-1.5">
+          <p className="text-[10px] uppercase tracking-wider text-vayu-muted">Vector Search</p>
+          <div className="flex items-center gap-1.5 opacity-80" aria-hidden>
+            <div className="grid gap-0.5">
+              <span className="h-0.5 w-3 rounded-full bg-vayu-fg/40" />
+              <span className="h-0.5 w-2 rounded-full bg-vayu-fg/40" />
+              <span className="h-0.5 w-2.5 rounded-full bg-vayu-fg/40" />
+            </div>
+            <motion.svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-vayu-accent"
+              animate={reduced ? undefined : { x: [0, 2, 0], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </motion.svg>
+            <div className="flex gap-0.5">
+              {[0, 1, 2].map((i) => (
+                <motion.span
+                  key={i}
+                  className="h-1 w-1 rounded-full bg-vayu-violet"
+                  animate={reduced ? undefined : { y: [0, -2, 0], opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.15 }}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </FloatCard>
     </div>
