@@ -293,7 +293,7 @@ class OpenAICompatibleProvider:
 
 
 # Preference order for failover when the requested/default provider isn't configured.
-PROVIDER_ORDER = ["anthropic", "openai", "gemini", "groq", "openrouter"]
+PROVIDER_ORDER = ["anthropic", "openai", "nvidia", "gemini", "groq", "openrouter"]
 
 
 def build_provider(name: str, settings: Settings) -> LLMProvider:
@@ -329,6 +329,14 @@ def build_provider(name: str, settings: Settings) -> LLMProvider:
             api_key=settings.openrouter_api_key,
             base_url="https://openrouter.ai/api/v1",
             default_model=settings.openrouter_chat_model,
+            max_retries=settings.llm_max_retries,
+        )
+    if name == "nvidia":
+        return OpenAICompatibleProvider(
+            provider="nvidia",
+            api_key=settings.nvidia_api_key,
+            base_url=settings.nvidia_base_url,
+            default_model=settings.nvidia_default_model,
             max_retries=settings.llm_max_retries,
         )
     raise LLMUnavailable(f"unknown provider: {name}")

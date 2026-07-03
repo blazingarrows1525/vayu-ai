@@ -14,11 +14,57 @@ _EXT_TO_TYPE = {
     "txt": "txt",
     "csv": "csv",
     "xlsx": "xlsx",
+    "png": "image",
+    "jpg": "image",
+    "jpeg": "image",
 }
 
 
 def _ext(filename: str) -> str:
     return filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+
+
+def _ocr_fallback(data: bytes, mime_type: str) -> str:
+    """Uses NVIDIA NIM Vision model for OCR if configured."""
+    import base64
+
+    import httpx
+    import structlog
+
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    if not settings.nvidia_api_key:
+        return ""
+        
+    b64_data = base64.b64encode(data).decode("utf-8")
+    url = f"data:{mime_type};base64,{b64_data}"
+    
+    try:
+        with httpx.Client(timeout=60.0) as client:
+            resp = client.post(
+                f"{settings.nvidia_base_url}/chat/completions",
+                headers={"Authorization": f"Bearer {settings.nvidia_api_key}"},
+                json={
+                    "model": settings.nvidia_ocr_model,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": "Extract all text from this image accurately. Preserve formatting. Output only the extracted text."},
+                                {"type": "image_url", "image_url": {"url": url}}
+                            ]
+                        }
+                    ],
+                    "max_tokens": 4096,
+                }
+            )
+            resp.raise_for_status()
+            res = resp.json()
+            return res["choices"][0]["message"]["content"]
+    except Exception as exc:
+        structlog.get_logger(__name__).warning("nvidia_ocr_failed", error=str(exc))
+        return ""
 
 
 def detect_source_type(filename: str) -> str:
@@ -77,7 +123,13 @@ def extract_text(filename: str, data: bytes) -> str:
         from pypdf import PdfReader
 
         reader = PdfReader(io.BytesIO(data))
-        return "\n\n".join((page.extract_text() or "") for page in reader.pages)
+        text = "\n\n".join((page.extract_text() or "") for page in reader.pages)
+        if not text.strip():
+            return _ocr_fallback(data, "application/pdf")
+        return text
+    if ext in ("png", "jpg", "jpeg", "image"):
+        mime = "image/png" if ext == "png" else "image/jpeg"
+        return _ocr_fallback(data, mime)
     if ext == "docx":
         import docx
 

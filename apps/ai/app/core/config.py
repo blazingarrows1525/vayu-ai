@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = None
     groq_api_key: str | None = None
     openrouter_api_key: str | None = None
+    nvidia_api_key: str | None = None
+    nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
     # Which provider to prefer; failover walks the rest in order if it's unconfigured.
     default_llm_provider: str = "anthropic"
     default_chat_model: str = "claude-sonnet-4-6"
@@ -47,6 +49,13 @@ class Settings(BaseSettings):
     gemini_chat_model: str = "gemini-2.5-pro"
     groq_chat_model: str = "llama-3.3-70b-versatile"
     openrouter_chat_model: str = "anthropic/claude-3.5-sonnet"
+    nvidia_default_model: str = "meta/llama-3.1-405b-instruct"
+    nvidia_embed_model: str = "nvidia/nv-embedqa-e5-v5"
+    nvidia_rerank_model: str = "nvidia/nv-rerankqa-mistral-4b-v3"
+    nvidia_ocr_model: str = "meta/llama-3.2-90b-vision-instruct"
+    nvidia_voice_model: str = "nvidia/parakeet-rnnt-1.1b"
+    nvidia_video_model: str = "meta/llama-3.2-90b-vision-instruct"
+    nvidia_safety_model: str | None = None
     # Transient-error retries per LLM call (429 / 5xx / timeouts) — the SDK clients back off.
     llm_max_retries: int = 2
 

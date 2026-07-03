@@ -17,6 +17,7 @@ from app.rag.retrieval import compress, cosine, mmr_rerank, reciprocal_rank_fusi
 from app.rag.vectorstore import VectorHit, VectorRecord, get_vector_store
 from app.services.embeddings import Embedder
 from app.services.llm import LLMError, LLMUnavailable, generate
+from app.services.rerank import NVIDIAReranker
 
 log = structlog.get_logger(__name__)
 
@@ -295,19 +296,22 @@ async def answer_question(
         )
         return await _answer_from_hits(settings, query, hits, external.name)
 
+    reranker = NVIDIAReranker(settings)
+    pool_size = top_k * 2 if reranker.available else top_k
+
     if settings.rag_hybrid:
         embeddings = await hybrid_retrieve(
             session,
             workspace_id=workspace_id,
             query=query,
             query_vec=query_vec,
-            top_k=top_k,
+            top_k=pool_size,
             source_ids=source_scope,
         )
         mode = "hybrid+mmr"
     else:
         embeddings = [
-            emb for emb, _ in await retrieve(session, workspace_id, query_vec, top_k, source_scope)
+            emb for emb, _ in await retrieve(session, workspace_id, query_vec, pool_size, source_scope)
         ]
         mode = "vector"
 
@@ -318,6 +322,12 @@ async def answer_question(
             [],
             {"model": embedder.active_model, "candidates": 0, "used": 0, "mode": mode},
         )
+
+    if reranker.available:
+        chunks = [emb.content for emb in embeddings]
+        ranked_indices = await reranker.rerank(query, chunks, top_k)
+        embeddings = [embeddings[i] for i in ranked_indices]
+        mode += "+nim_rerank"
 
     by_id = {str(emb.id): emb for emb in embeddings}
     # Context compression: dedupe + cap to a char budget before grounding.

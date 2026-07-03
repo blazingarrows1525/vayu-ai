@@ -25,6 +25,14 @@ class Embedder:
             self._client = None
             self._model = settings.voyage_model
             self._available = bool(settings.voyage_api_key)
+        elif self._provider == "nvidia":
+            self._client = (
+                AsyncOpenAI(api_key=settings.nvidia_api_key, base_url=settings.nvidia_base_url)
+                if settings.nvidia_api_key
+                else None
+            )
+            self._model = settings.nvidia_embed_model
+            self._available = self._client is not None
         else:  # openai
             self._client = (
                 AsyncOpenAI(api_key=settings.openai_api_key)
@@ -46,7 +54,11 @@ class Embedder:
     @property
     def key_env(self) -> str:
         """Env var that supplies this provider's API key (for setup hints)."""
-        return "VOYAGE_API_KEY" if self._provider == "voyage" else "OPENAI_API_KEY"
+        if self._provider == "voyage":
+            return "VOYAGE_API_KEY"
+        if self._provider == "nvidia":
+            return "NVIDIA_API_KEY"
+        return "OPENAI_API_KEY"
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
         if not self._available:
