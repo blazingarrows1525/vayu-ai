@@ -21,7 +21,7 @@ class SafetyService:
         self._settings = settings
         self._client: AsyncOpenAI | None
         self._available = bool(settings.nvidia_api_key)
-        self._model = settings.nvidia_safety_model or "meta/llama-guard-3-8b"
+        self._model = settings.nvidia_safety_model or "nvidia/llama-3.1-nemoguard-8b-content-safety"
         if self._available:
             self._client = AsyncOpenAI(
                 api_key=settings.nvidia_api_key, base_url=settings.nvidia_base_url
