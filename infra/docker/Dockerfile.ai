@@ -1,5 +1,6 @@
 # Build context = repo root: `docker build -f infra/docker/Dockerfile.ai .`
 FROM python:3.10-slim AS base
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 WORKDIR /app/apps/ai
