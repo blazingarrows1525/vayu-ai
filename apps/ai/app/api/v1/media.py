@@ -52,11 +52,39 @@ async def process_voice(
             text=transcript
         )
     
-    # 2. If it's a chat action, we could pass it to LLM and synthesize the response
+    # 2. If it's a chat action, we pass it to LLM and synthesize the response
     if action == "chat":
+        from app.services.safety import SafetyService
         from app.services.llm import generate
-        resp, _ = await generate(settings, system="You are a voice assistant.", prompt=transcript)
-        return VoiceResponse(transcript=resp, audio_url=None)
+        import base64
+
+        safety_service = SafetyService(settings)
+        
+        # Check input safety
+        safety_check = await safety_service.check_prompt(transcript)
+        if not safety_check.is_safe:
+            msg = "I'm sorry, I cannot fulfill that request."
+            # Synthesize rejection message
+            audio_bytes = await voice_service.synthesize(msg)
+            b64_audio = base64.b64encode(audio_bytes).decode("utf-8")
+            return VoiceResponse(transcript=msg, audio_url=f"data:audio/wav;base64,{b64_audio}")
+
+        # Generate response
+        resp, _ = await generate(settings, system="You are a helpful voice assistant. Keep your answers concise, 1-3 sentences max.", prompt=transcript)
+        
+        # Check output safety
+        out_safety_check = await safety_service.check_prompt(resp)
+        if not out_safety_check.is_safe:
+            msg = "I generated a response, but it was flagged as unsafe."
+            audio_bytes = await voice_service.synthesize(msg)
+            b64_audio = base64.b64encode(audio_bytes).decode("utf-8")
+            return VoiceResponse(transcript=msg, audio_url=f"data:audio/wav;base64,{b64_audio}")
+
+        # Synthesize actual response
+        out_audio_bytes = await voice_service.synthesize(resp)
+        out_b64_audio = base64.b64encode(out_audio_bytes).decode("utf-8")
+        
+        return VoiceResponse(transcript=resp, audio_url=f"data:audio/wav;base64,{out_b64_audio}")
         
     return VoiceResponse(transcript=transcript)
 
