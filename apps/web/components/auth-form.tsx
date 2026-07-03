@@ -4,30 +4,30 @@ import { useEffect, useState } from "react";
 import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-
-const inputClass =
-  "w-full rounded-lg border border-vayu-border bg-vayu-bg px-3 py-2 text-sm text-vayu-fg outline-none transition focus:border-vayu-accent";
+import { motion } from "framer-motion";
 
 interface SocialProviders {
   google: boolean;
   github: boolean;
 }
 
-export function AuthForm({ mode }: { mode: "login" | "signup" }) {
+const LoadingSpinner = () => (
+  <svg className="w-5 h-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+  </svg>
+);
+
+export function AuthForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const isSignup = mode === "signup";
-  // Only honor same-origin relative redirects (prevents open-redirect abuse).
   const redirectParam = params.get("redirect");
   const target = (
     redirectParam?.startsWith("/") ? redirectParam : "/dashboard"
   ) as Route;
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const [providers, setProviders] = useState<SocialProviders>({
     google: false,
     github: false,
@@ -41,117 +41,83 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
       .catch(() => {});
   }, []);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    const result = isSignup
-      ? await authClient.signUp.email({ email, password, name })
-      : await authClient.signIn.email({ email, password });
-
-    setLoading(false);
-    if (result.error) {
-      setError(result.error.message ?? "Something went wrong");
-      return;
-    }
-    router.push(target);
-    router.refresh();
-  }
-
   async function onSocial(provider: "google" | "github") {
     setError(null);
+    setLoadingProvider(provider);
     try {
-      // Redirects to the provider; Better Auth handles the callback + session,
-      // then returns the browser to `target`.
       await authClient.signIn.social({ provider, callbackURL: target });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Social sign-in failed");
+      setLoadingProvider(null);
     }
   }
 
   const hasSocial = providers.google || providers.github;
 
   return (
-    <>
-      <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-3">
-        {isSignup && (
-          <input
-            className={inputClass}
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            autoComplete="name"
-          />
-        )}
-        <input
-          className={inputClass}
-          type="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          autoComplete="email"
-        />
-        <input
-          className={inputClass}
-          type="password"
-          placeholder="Password (min 8 chars)"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={8}
-          autoComplete={isSignup ? "new-password" : "current-password"}
-        />
-
-        {error && <p className="text-sm text-red-400">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-2 rounded-lg bg-vayu-accent px-4 py-2 text-sm font-semibold text-vayu-bg transition hover:bg-vayu-accent-2 disabled:opacity-60"
+    <div className="flex flex-col w-full gap-4 mt-6">
+      {error && (
+        <motion.p 
+          initial={{ opacity: 0, y: -10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          className="p-3 text-sm text-center text-red-400 bg-red-900/10 border border-red-500/20 rounded-xl"
         >
-          {loading ? "…" : isSignup ? "Create account" : "Sign in"}
-        </button>
-      </form>
-
-      {hasSocial && (
-        <>
-          <div className="my-4 flex items-center gap-3 text-xs text-vayu-muted">
-            <span className="h-px flex-1 bg-vayu-border" />
-            or continue with
-            <span className="h-px flex-1 bg-vayu-border" />
-          </div>
-          <div className="flex flex-col gap-2">
-            {providers.google && (
-              <button
-                type="button"
-                onClick={() => onSocial("google")}
-                className="flex items-center justify-center gap-2 rounded-lg border border-vayu-border bg-vayu-bg px-4 py-2 text-sm font-medium text-vayu-fg transition hover:border-vayu-accent"
-              >
-                <GoogleIcon /> Continue with Google
-              </button>
-            )}
-            {providers.github && (
-              <button
-                type="button"
-                onClick={() => onSocial("github")}
-                className="flex items-center justify-center gap-2 rounded-lg border border-vayu-border bg-vayu-bg px-4 py-2 text-sm font-medium text-vayu-fg transition hover:border-vayu-accent"
-              >
-                <GitHubIcon /> Continue with GitHub
-              </button>
-            )}
-          </div>
-        </>
+          {error}
+        </motion.p>
       )}
-    </>
+
+      {hasSocial ? (
+        <div className="flex flex-col gap-3">
+          {providers.google && (
+            <motion.button
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={() => onSocial("google")}
+              disabled={loadingProvider !== null}
+              className="relative flex items-center justify-center w-full gap-3 px-4 py-3 text-sm font-semibold text-black transition-all bg-white border border-transparent rounded-xl hover:shadow-[0_8px_30px_rgb(255,255,255,0.12)] disabled:opacity-70 disabled:hover:scale-100 disabled:hover:y-0"
+            >
+              {loadingProvider === "google" ? <LoadingSpinner /> : <GoogleIcon />}
+              Continue with Google
+            </motion.button>
+          )}
+          
+          {providers.github && (
+            <motion.button
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={() => onSocial("github")}
+              disabled={loadingProvider !== null}
+              className="relative flex items-center justify-center w-full gap-3 px-4 py-3 text-sm font-semibold text-white transition-all bg-[#18181b] border border-[#27272a] rounded-xl hover:bg-[#27272a] hover:border-[#3f3f46] hover:shadow-[0_8px_30px_rgb(255,255,255,0.05)] disabled:opacity-70 disabled:hover:scale-100 disabled:hover:y-0"
+            >
+              {loadingProvider === "github" ? <LoadingSpinner /> : <GitHubIcon />}
+              Continue with GitHub
+            </motion.button>
+          )}
+        </div>
+      ) : (
+        <motion.div 
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          className="text-sm text-center text-vayu-muted p-4 border border-white/5 rounded-xl bg-white/5 backdrop-blur-sm"
+        >
+          Authentication providers are currently being configured.
+        </motion.div>
+      )}
+      
+      <p className="mt-6 text-xs text-center text-vayu-muted opacity-80">
+        By continuing, you agree to our{" "}
+        <a href="#" className="underline hover:text-white transition-colors">Terms of Service</a>{" "}
+        and{" "}
+        <a href="#" className="underline hover:text-white transition-colors">Privacy Policy</a>.
+      </p>
+    </div>
   );
 }
 
 function GoogleIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
+    <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
       <path
         fill="#FFC107"
         d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z"
@@ -174,7 +140,7 @@ function GoogleIcon() {
 
 function GitHubIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 016 0C17 5.1 18 5.4 18 5.4c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z" />
     </svg>
   );
