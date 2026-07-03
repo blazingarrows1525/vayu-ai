@@ -27,6 +27,17 @@ export function CopilotPanel({ editor }: { editor: Editor | null }) {
   const [command, setCommand] = useState("/improve");
   const [instruction, setInstruction] = useState("");
 
+  const [model, setModel] = useState("meta/llama-3.1-405b-instruct");
+  const [provider, setProvider] = useState("nvidia");
+
+  const MODELS = [
+    { value: "meta/llama-3.1-405b-instruct", label: "NVIDIA Llama 3.1 405B", provider: "nvidia" },
+    { value: "meta/llama-3.1-70b-instruct", label: "NVIDIA Llama 3.1 70B", provider: "nvidia" },
+    { value: "meta/llama-3.1-8b-instruct", label: "NVIDIA Llama 3.1 8B", provider: "nvidia" },
+    { value: "gpt-4o", label: "GPT-4o", provider: "openai" },
+    { value: "claude-3-5-sonnet-20240620", label: "Claude 3.5 Sonnet", provider: "anthropic" }
+  ];
+
   const isGenerate = command.startsWith("/generate");
   const needsTone = command === "/change-tone";
 
@@ -44,6 +55,8 @@ export function CopilotPanel({ editor }: { editor: Editor | null }) {
       selection: isGenerate ? undefined : selection,
       context: isGenerate ? instruction || selection : undefined,
       tone: needsTone ? instruction : undefined,
+      model,
+      provider,
     });
   }
 
@@ -66,6 +79,21 @@ export function CopilotPanel({ editor }: { editor: Editor | null }) {
           {COMMANDS.map((c) => (
             <option key={c.value} value={c.value}>
               {c.label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={model}
+          onChange={(e) => {
+            setModel(e.target.value);
+            const m = MODELS.find((m) => m.value === e.target.value);
+            if (m) setProvider(m.provider);
+          }}
+          className={inputClass}
+        >
+          {MODELS.map((m) => (
+            <option key={m.value} value={m.value}>
+              {m.label}
             </option>
           ))}
         </select>

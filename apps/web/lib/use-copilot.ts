@@ -18,6 +18,8 @@ export interface CopilotPayload {
   context?: string;
   tone?: string;
   documentId?: string;
+  model?: string;
+  provider?: string;
 }
 
 /** Consumes the BFF copilot SSE stream and exposes incremental text + usage. */
