@@ -26,9 +26,10 @@ class Embedder:
             self._model = settings.voyage_model
             self._available = bool(settings.voyage_api_key)
         elif self._provider == "nvidia":
+            api_key = settings.nvidia_embed_api_key or settings.nvidia_api_key
             self._client = (
-                AsyncOpenAI(api_key=settings.nvidia_api_key, base_url=settings.nvidia_base_url)
-                if settings.nvidia_api_key
+                AsyncOpenAI(api_key=api_key, base_url=settings.nvidia_base_url)
+                if api_key
                 else None
             )
             self._model = settings.nvidia_embed_model

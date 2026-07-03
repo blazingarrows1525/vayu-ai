@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     groq_api_key: str | None = None
     openrouter_api_key: str | None = None
     nvidia_api_key: str | None = None
+    nvidia_embed_api_key: str | None = None
     nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
     # Which provider to prefer; failover walks the rest in order if it's unconfigured.
     default_llm_provider: str = "anthropic"
