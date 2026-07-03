@@ -28,7 +28,8 @@ export function PushToTalk({ onAudioData }: PushToTalkProps) {
 
       mediaRecorder.current.onstop = async () => {
         setIsProcessing(true);
-        const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
+        // Do not force audio/webm; Safari creates audio/mp4 by default, and ffmpeg handles both
+        const audioBlob = new Blob(audioChunks.current);
         await onAudioData(audioBlob);
         setIsProcessing(false);
         stream.getTracks().forEach((track) => track.stop());
@@ -49,13 +50,15 @@ export function PushToTalk({ onAudioData }: PushToTalkProps) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center space-y-4">
+    <div className="flex flex-col items-center justify-center space-y-4 select-none">
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onMouseDown={startRecording}
         onMouseUp={stopRecording}
         onMouseLeave={stopRecording}
+        onTouchStart={startRecording}
+        onTouchEnd={stopRecording}
         disabled={isProcessing}
         className={`relative flex h-24 w-24 items-center justify-center rounded-full shadow-2xl transition-colors duration-300 ${
           isRecording ? "bg-red-500/20 text-red-500" : "bg-white/10 text-white/70 hover:bg-white/20 hover:text-white"
