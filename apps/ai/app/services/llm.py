@@ -115,6 +115,10 @@ class LLMProvider(Protocol):
         self, *, system: str, prompt: str, model: str | None = ..., max_tokens: int = ...
     ) -> tuple[dict, Usage]: ...
 
+    async def chat(
+        self, *, messages: list[dict], model: str | None = ..., max_tokens: int = ..., tools: list[dict] | None = ...
+    ) -> tuple[str, Usage, list[dict] | None]: ...
+
 
 class AnthropicProvider:
     provider = "anthropic"
@@ -188,6 +192,11 @@ class AnthropicProvider:
             system=sys, prompt=prompt, model=model, max_tokens=max_tokens
         )
         return _extract_json(text), usage
+
+    async def chat(
+        self, *, messages: list[dict], model: str | None = None, max_tokens: int = 1024, tools: list[dict] | None = None
+    ) -> tuple[str, Usage, list[dict] | None]:
+        raise NotImplementedError("AnthropicProvider does not support chat with tools yet")
 
 
 class OpenAICompatibleProvider:
@@ -290,6 +299,38 @@ class OpenAICompatibleProvider:
         return _extract_json(text), Usage(
             in_tok, out_tok, estimate_cost(mdl, in_tok, out_tok), mdl, self.provider
         )
+
+    async def chat(
+        self, *, messages: list[dict], model: str | None = None, max_tokens: int = 1024, tools: list[dict] | None = None
+    ) -> tuple[str, Usage, list[dict] | None]:
+        if self._client is None:
+            raise LLMUnavailable(f"{self.provider} API key is not configured")
+        mdl = model or self._default_model
+        kwargs = {}
+        if tools:
+            kwargs["tools"] = tools
+
+        resp = await self._client.chat.completions.create(
+            model=mdl, max_tokens=max_tokens, messages=messages, **kwargs  # type: ignore
+        )
+        
+        msg = resp.choices[0].message
+        text = msg.content or ""
+        
+        tool_calls = None
+        if msg.tool_calls:
+            tool_calls = []
+            for tc in msg.tool_calls:
+                tool_calls.append({
+                    "id": tc.id,
+                    "name": tc.function.name,
+                    "arguments": tc.function.arguments
+                })
+                
+        usage = resp.usage
+        in_tok = usage.prompt_tokens if usage else 0
+        out_tok = usage.completion_tokens if usage else 0
+        return text, Usage(in_tok, out_tok, estimate_cost(mdl, in_tok, out_tok), mdl, self.provider), tool_calls
 
 
 # Preference order for failover when the requested/default provider isn't configured.

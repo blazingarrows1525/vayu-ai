@@ -87,12 +87,9 @@ async def stream_run(
     yield _sse("start", {"agent": agent_type})
     async for event in graph.astream({"task": task}):
         for node, update in event.items():
-            snippet = (
-                update.get("output")
-                or update.get("findings")
-                or update.get("plan")
-                or ""
-            )
+            snippet = update.get("output") or ""
+            if not snippet and "steps" in update and update["steps"]:
+                snippet = update["steps"][-1].get("output", "")
             yield _sse(
                 "step",
                 {"node": node, "output": snippet[:800], "tokens": update.get("tokens", 0)},
