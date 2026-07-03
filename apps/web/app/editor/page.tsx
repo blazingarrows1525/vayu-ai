@@ -9,13 +9,7 @@ import { GlowButton } from "@/components/landing/glow-button";
 import { Magnetic } from "@/components/landing/magnetic";
 import { motion, useReducedMotion } from "framer-motion";
 
-const INITIAL = `
-<h1>VAYU Editor</h1>
-<p>An AI-native block editor. Press <code>/</code> anywhere for the command menu — headings, lists, tables, code, math, callouts, and Mermaid diagrams.</p>
-<div data-type="callout" data-variant="success"><p>Tip: type <code>/diagram</code> for a Mermaid flowchart, or <code>/math</code> for a LaTeX block.</p></div>
-<blockquote><p>Intelligence at the speed of thought.</p></blockquote>
-<pre><code class="language-typescript">export const vayu = { plane: "product", ready: true };</code></pre>
-`;
+const INITIAL = `<p></p>`;
 
 function FloatCard({
   children,
