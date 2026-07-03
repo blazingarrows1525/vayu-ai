@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from app.core.config import Settings, get_settings
-from app.db.core import get_session
+from app.db.base import get_session
 from app.services.video import VideoService
 from app.services.voice import VoiceService
 
