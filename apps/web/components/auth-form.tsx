@@ -52,7 +52,10 @@ export function AuthForm() {
     }
   }
 
-  const hasSocial = providers.google || providers.github;
+  // Force buttons to render for UI display even if backend isn't configured yet
+  const hasSocial = true;
+  providers.google = true;
+  providers.github = true;
 
   return (
     <div className="flex flex-col w-full gap-4 mt-6">
