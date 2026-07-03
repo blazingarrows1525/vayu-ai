@@ -11,11 +11,16 @@ interface PushToTalkProps {
 export function PushToTalk({ onAudioData }: PushToTalkProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<BlobPart[]>([]);
 
   const startRecording = async () => {
     try {
+      setMicError(null);
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Microphone access is blocked by the browser. Please ensure you are on a secure connection (HTTPS) and have granted microphone permissions.");
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder.current = new MediaRecorder(stream);
       audioChunks.current = [];
@@ -37,8 +42,9 @@ export function PushToTalk({ onAudioData }: PushToTalkProps) {
 
       mediaRecorder.current.start();
       setIsRecording(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error accessing microphone:", error);
+      setMicError(error.message || "Failed to access microphone.");
     }
   };
 
@@ -82,9 +88,14 @@ export function PushToTalk({ onAudioData }: PushToTalkProps) {
           />
         )}
       </motion.button>
-      <p className="text-sm text-white/50">
-        {isProcessing ? "Processing audio..." : isRecording ? "Listening..." : "Hold to speak"}
-      </p>
+      <div className="text-center">
+        <p className="text-sm text-white/50">
+          {isProcessing ? "Processing audio..." : isRecording ? "Listening..." : "Hold to speak"}
+        </p>
+        {micError && (
+          <p className="text-xs text-red-400 mt-2 max-w-[250px]">{micError}</p>
+        )}
+      </div>
     </div>
   );
 }
