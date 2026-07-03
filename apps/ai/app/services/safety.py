@@ -19,12 +19,12 @@ class SafetyResult(BaseModel):
 class SafetyService:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
-        self._client: AsyncOpenAI | None
-        self._available = bool(settings.nvidia_api_key)
+        self._api_key = settings.nvidia_safety_api_key or settings.nvidia_api_key
+        self._available = bool(self._api_key)
         self._model = settings.nvidia_safety_model or "nvidia/llama-3.1-nemoguard-8b-content-safety"
         if self._available:
             self._client = AsyncOpenAI(
-                api_key=settings.nvidia_api_key, base_url=settings.nvidia_base_url
+                api_key=self._api_key, base_url=settings.nvidia_base_url
             )
         else:
             self._client = None
