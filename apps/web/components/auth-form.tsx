@@ -110,9 +110,9 @@ export function AuthForm() {
       
       <p className="mt-6 text-xs text-center text-vayu-muted opacity-80">
         By continuing, you agree to our{" "}
-        <a href="#" className="underline hover:text-white transition-colors">Terms of Service</a>{" "}
+        <a href="/terms" className="underline hover:text-white transition-colors">Terms of Service</a>{" "}
         and{" "}
-        <a href="#" className="underline hover:text-white transition-colors">Privacy Policy</a>.
+        <a href="/privacy" className="underline hover:text-white transition-colors">Privacy Policy</a>.
       </p>
     </div>
   );
