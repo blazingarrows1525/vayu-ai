@@ -5,7 +5,7 @@ const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://localhost:8787";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path?: string[] }> }
 ) {
   const sessionCookie = getSessionCookie(req);
   if (!sessionCookie) {
