@@ -82,7 +82,7 @@ export default function VaultPage() {
         </Link>
       </header>
 
-      <section className="rounded-2xl border border-vayu-border bg-vayu-surface p-6">
+      <section className="glass-panel rounded-2xl p-6">
         <div className="flex gap-2">
           <input
             value={query}
@@ -126,7 +126,7 @@ export default function VaultPage() {
           return (
           <div
             key={r.sourceId}
-            className="rounded-2xl border border-vayu-border bg-vayu-surface p-4"
+            className="glass-panel rounded-2xl p-4"
           >
             <div className="flex items-center justify-between gap-3">
               <span className="font-medium text-vayu-fg">{r.title}</span>

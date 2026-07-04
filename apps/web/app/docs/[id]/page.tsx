@@ -145,11 +145,11 @@ export default function DocPage() {
       </header>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_18rem]">
-        <div className="rounded-2xl border border-vayu-border bg-vayu-surface p-6">
+        <div className="glass-panel rounded-2xl p-6">
           <VayuEditor content={content} onCreate={setEditor} />
         </div>
 
-        <aside className="rounded-2xl border border-vayu-border bg-vayu-surface p-4">
+        <aside className="glass-panel rounded-2xl p-4">
           <h2 className="text-sm font-semibold">Comments</h2>
           <div className="mt-3 flex gap-2">
             <input

@@ -102,7 +102,7 @@ export function FloatingDock() {
       aria-label="VAYU navigation"
       className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2"
     >
-      <ul className="glass glow-soft flex items-end gap-1.5 rounded-2xl px-2.5 py-2">
+      <ul className="glass-panel glow-soft flex items-end gap-1.5 rounded-2xl px-2.5 py-2">
         {ITEMS.map((item, i) => {
           const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
           const ring =
@@ -129,6 +129,13 @@ export function FloatingDock() {
                 >
                   <span className="h-5 w-5">{item.icon}</span>
                 </span>
+                {/* active indicator dot */}
+                {active && (
+                  <span
+                    aria-hidden
+                    className="absolute -bottom-1.5 h-1 w-1 rounded-full bg-vayu-accent shadow-[0_0_8px_var(--color-vayu-accent)]"
+                  />
+                )}
               </Link>
             </li>
           );

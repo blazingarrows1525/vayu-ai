@@ -19,18 +19,18 @@ export default async function DashboardPage() {
       </header>
 
       <section className="mt-10 grid gap-4">
-        <Card title="Identity">
+        <Card title="Identity" icon="◈" delay={0}>
           <Row label="Name" value={session.user.name} />
           <Row label="Email" value={session.user.email} />
           <Row label="User ID" value={session.user.id} mono />
         </Card>
 
-        <Card title="Active workspace (RBAC)">
+        <Card title="Active workspace (RBAC)" icon="⬡" delay={0.1}>
           <Row label="Workspace ID" value={membership?.workspaceId ?? "—"} mono />
           <Row label="Your role" value={membership?.role ?? "—"} />
         </Card>
 
-        <Card title="Intelligence-plane bridge">
+        <Card title="Intelligence-plane bridge" icon="⟁" delay={0.2}>
           <p className="mb-3 text-sm text-vayu-muted">
             Calls <code>/api/ai/agents</code> — the BFF mints a JWT, the FastAPI
             plane verifies it via JWKS and returns the agent catalog.
@@ -42,10 +42,33 @@ export default async function DashboardPage() {
   );
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({
+  title,
+  icon,
+  delay = 0,
+  children,
+}: {
+  title: string;
+  icon?: string;
+  delay?: number;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="rounded-2xl border border-vayu-border bg-vayu-surface p-6">
-      <h2 className="text-sm font-semibold text-vayu-fg">{title}</h2>
+    <div
+      className="glass-panel animate-rise rounded-2xl p-6"
+      style={{ animationDelay: `${delay}s` }}
+    >
+      <div className="flex items-center gap-2.5">
+        {icon && (
+          <span
+            aria-hidden
+            className="grid h-7 w-7 place-items-center rounded-lg bg-vayu-accent/12 text-sm text-vayu-accent"
+          >
+            {icon}
+          </span>
+        )}
+        <h2 className="text-sm font-semibold text-vayu-fg">{title}</h2>
+      </div>
       <div className="mt-3 flex flex-col gap-2">{children}</div>
     </div>
   );

@@ -83,7 +83,7 @@ export default function AgentsPage() {
         </Link>
       </header>
 
-      <section className="rounded-2xl border border-vayu-border bg-vayu-surface p-6">
+      <section className="glass-panel rounded-2xl p-6">
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={type}
@@ -115,7 +115,7 @@ export default function AgentsPage() {
       </section>
 
       {running && steps.length === 0 && (
-        <section className="mt-6 rounded-2xl border border-vayu-border bg-vayu-surface p-4">
+        <section className="mt-6 glass-panel rounded-2xl p-4">
           <p className="animate-pulse text-sm text-vayu-muted">
             Planning the run and gathering context…
           </p>

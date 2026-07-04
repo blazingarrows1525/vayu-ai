@@ -160,6 +160,56 @@ body::after {
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   border: 1px solid color-mix(in oklab, var(--color-vayu-accent) 14%, transparent);
 }
+
+/* Premium glass module: frosted body + inner top highlight (specular) +
+   reflective edge + ambient lift. The workhorse surface of the glassbox UI. */
+.glass-panel {
+  position: relative;
+  background: linear-gradient(
+    165deg,
+    color-mix(in oklab, var(--color-vayu-surface) 78%, transparent),
+    color-mix(in oklab, var(--color-vayu-surface) 52%, transparent)
+  );
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid color-mix(in oklab, var(--color-vayu-accent) 16%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, #fff 9%, transparent),   /* top specular line */
+    inset 0 0 32px -24px var(--glow-accent),                    /* inner ambient */
+    var(--shadow-ambient);
+  transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+}
+.glass-panel:hover {
+  border-color: color-mix(in oklab, var(--color-vayu-accent) 32%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, #fff 13%, transparent),
+    inset 0 0 36px -22px var(--glow-accent),
+    var(--shadow-lift),
+    0 0 34px -10px var(--glow-accent);
+  transform: translateY(-2px);
+}
+
+/* Animated gradient edge for hero-grade panels. */
+.edge-flow {
+  position: relative;
+}
+.edge-flow::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--color-vayu-accent) 55%, transparent),
+    color-mix(in oklab, var(--color-vayu-violet) 45%, transparent),
+    color-mix(in oklab, var(--color-vayu-accent-2) 55%, transparent),
+    color-mix(in oklab, var(--color-vayu-accent) 55%, transparent)
+  );
+  background-size: 300% 300%;
+  animation: gradient-x 8s ease infinite;
+  opacity: 0.5;
+}
 .glow { box-shadow: 0 0 28px -6px var(--glow-accent); }
 .glow-violet { box-shadow: 0 0 28px -6px var(--glow-violet); }
 .glow-soft { box-shadow: 0 8px 40px -12px color-mix(in oklab, var(--color-vayu-accent) 55%, transparent); }

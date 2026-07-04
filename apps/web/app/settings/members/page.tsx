@@ -76,7 +76,7 @@ export default function MembersPage() {
         </Link>
       </header>
 
-      <section className="rounded-2xl border border-vayu-border bg-vayu-surface p-6">
+      <section className="glass-panel rounded-2xl p-6">
         <h2 className="text-sm font-semibold">Invite a member</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           <input
