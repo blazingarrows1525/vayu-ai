@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import base64
 import json
+
 import structlog
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 
 from app.core.config import Settings, get_settings
 from app.core.security import verify_token
+from app.services.llm import stream_generate
 from app.services.safety import SafetyService
 from app.services.voice import VoiceService
-from app.services.llm import stream_generate
 
 log = structlog.get_logger(__name__)
 router = APIRouter()

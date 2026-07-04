@@ -12,38 +12,46 @@ from app.services.llm import (
 _NO_KEYS = dict(
     anthropic_api_key=None,
     openai_api_key=None,
+    nvidia_api_key=None,
     gemini_api_key=None,
     groq_api_key=None,
     openrouter_api_key=None,
 )
 
 
-def test_five_providers() -> None:
-    assert PROVIDER_ORDER == ["anthropic", "openai", "gemini", "groq", "openrouter"]
+def settings(**kw) -> Settings:
+    """Hermetic Settings — never reads the developer's real .env."""
+    return Settings(_env_file=None, **{**_NO_KEYS, **kw})
+
+
+def test_six_providers() -> None:
+    assert PROVIDER_ORDER == ["anthropic", "openai", "nvidia", "gemini", "groq", "openrouter"]
 
 
 def test_resolve_raises_without_keys() -> None:
     with pytest.raises(LLMUnavailable):
-        resolve_llm(Settings(**_NO_KEYS))
+        resolve_llm(settings())
 
 
-def test_provider_status_reports_all_five() -> None:
-    status = provider_status(Settings(**_NO_KEYS))
-    assert len(status) == 5
+def test_provider_status_reports_all() -> None:
+    status = provider_status(settings())
+    assert len(status) == len(PROVIDER_ORDER)
     assert all(p["available"] is False for p in status)
 
 
 def test_resolve_failover_picks_available() -> None:
-    settings = Settings(**{**_NO_KEYS, "openai_api_key": "sk-test"})
-    provider = resolve_llm(settings)  # anthropic unconfigured → failover to openai
-    assert provider.provider == "openai"
+    provider = resolve_llm(settings(openai_api_key="sk-test"))
+    assert provider.provider == "openai"  # anthropic unconfigured → failover
 
 
 def test_preferred_provider_wins() -> None:
-    settings = Settings(
-        **{**_NO_KEYS, "openai_api_key": "sk-a", "groq_api_key": "gk-b"}
-    )
-    assert resolve_llm(settings, preferred="groq").provider == "groq"
+    s = settings(openai_api_key="sk-a", groq_api_key="gk-b")
+    assert resolve_llm(s, preferred="groq").provider == "groq"
+
+
+def test_nvidia_provider_available_when_keyed() -> None:
+    provider = resolve_llm(settings(nvidia_api_key="nv-test"))
+    assert provider.provider == "nvidia"
 
 
 def test_cost_uses_known_pricing() -> None:

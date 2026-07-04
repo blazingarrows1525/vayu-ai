@@ -54,9 +54,10 @@ async def process_voice(
     
     # 2. If it's a chat action, we pass it to LLM and synthesize the response
     if action == "chat":
-        from app.services.safety import SafetyService
-        from app.services.llm import generate
         import base64
+
+        from app.services.llm import generate
+        from app.services.safety import SafetyService
 
         safety_service = SafetyService(settings)
         

@@ -16,10 +16,16 @@ from app.services.llm import (
 _NO_KEYS = dict(
     anthropic_api_key=None,
     openai_api_key=None,
+    nvidia_api_key=None,
     gemini_api_key=None,
     groq_api_key=None,
     openrouter_api_key=None,
 )
+
+
+def settings(**kw) -> Settings:
+    """Hermetic Settings — never reads the developer's real .env."""
+    return Settings(_env_file=None, **{**_NO_KEYS, **kw})
 
 
 def test_extract_json_bare() -> None:
@@ -35,14 +41,14 @@ def test_extract_json_prose_wrapped() -> None:
 
 
 def test_resolve_order_dedup_and_priority() -> None:
-    settings = Settings(**{**_NO_KEYS, "default_llm_provider": "gemini"})
-    order = _resolve_order(settings, preferred="groq")
+    cfg = settings(default_llm_provider="gemini")
+    order = _resolve_order(cfg, preferred="groq")
     assert order[0] == "groq" and order[1] == "gemini"
     assert len(order) == len(set(order))  # no duplicates
 
 
 def test_resolve_chain_empty_without_keys() -> None:
-    assert _resolve_chain(Settings(**_NO_KEYS)) == []
+    assert _resolve_chain(settings()) == []
 
 
 def test_gemini_pro_pricing_known() -> None:
@@ -84,7 +90,7 @@ async def test_generate_falls_over_to_next_provider(monkeypatch) -> None:
         "_resolve_chain",
         lambda settings, preferred=None: [_Fake("gemini", fail=True), _Fake("groq", text="done")],
     )
-    text, usage = await llm.generate(Settings(**_NO_KEYS), system="s", prompt="p")
+    text, usage = await llm.generate(settings(), system="s", prompt="p")
     assert text == "done"
     assert usage.provider == "groq"
 
@@ -96,13 +102,13 @@ async def test_generate_raises_llmerror_when_all_fail(monkeypatch) -> None:
         lambda settings, preferred=None: [_Fake("a", fail=True), _Fake("b", fail=True)],
     )
     with pytest.raises(llm.LLMError):
-        await llm.generate(Settings(**_NO_KEYS), system="s", prompt="p")
+        await llm.generate(settings(), system="s", prompt="p")
 
 
 async def test_generate_raises_unavailable_when_no_providers(monkeypatch) -> None:
     monkeypatch.setattr(llm, "_resolve_chain", lambda settings, preferred=None: [])
     with pytest.raises(llm.LLMUnavailable):
-        await llm.generate(Settings(**_NO_KEYS), system="s", prompt="p")
+        await llm.generate(settings(), system="s", prompt="p")
 
 
 async def test_generate_json_falls_over(monkeypatch) -> None:
@@ -111,7 +117,7 @@ async def test_generate_json_falls_over(monkeypatch) -> None:
         "_resolve_chain",
         lambda settings, preferred=None: [_Fake("gemini", fail=True), _Fake("groq")],
     )
-    data, _ = await llm.generate_json(Settings(**_NO_KEYS), system="s", prompt="p")
+    data, _ = await llm.generate_json(settings(), system="s", prompt="p")
     assert data == {"provider": "groq"}
 
 
@@ -123,7 +129,7 @@ async def test_stream_generate_falls_over_before_first_token(monkeypatch) -> Non
     )
     tokens = [
         payload
-        async for kind, payload in llm.stream_generate(Settings(**_NO_KEYS), system="s", prompt="p")
+        async for kind, payload in llm.stream_generate(settings(), system="s", prompt="p")
         if kind == "token"
     ]
     assert tokens == ["hi"]

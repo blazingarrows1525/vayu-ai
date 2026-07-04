@@ -12,12 +12,15 @@ function uniqueEmail(): string {
 
 async function signUp(page: Page): Promise<string> {
   const email = uniqueEmail();
-  await page.goto("/signup");
-  await page.getByPlaceholder("Name").fill("E2E Tester");
-  await page.getByPlaceholder("you@example.com").fill(email);
-  await page.getByPlaceholder(/password/i).fill("e2e-password-123");
-  await page.getByRole("button", { name: /create account/i }).click();
-  // Better Auth auto-signs-in on signup and the form pushes to /dashboard.
+  // The visible UI is OAuth-only, so e2e provisions the account through Better
+  // Auth's REST API (email/password stays enabled server-side). page.request
+  // shares the browser context's cookie jar, so the session cookie from the
+  // response logs the page in — the protected shells are then exercised for real.
+  const res = await page.request.post("/api/auth/sign-up/email", {
+    data: { email, password: "e2e-password-123", name: "E2E Tester" },
+  });
+  expect(res.ok()).toBeTruthy();
+  await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 });
   return email;
 }

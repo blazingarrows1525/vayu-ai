@@ -46,6 +46,7 @@ class VoiceService:
                 import asyncio
                 import tempfile
                 from pathlib import Path
+
                 import riva.client
 
                 # Convert incoming audio (often webm from browser) to 16kHz mono WAV for Riva

@@ -4,7 +4,7 @@ The agent decides to use tools or returns a final answer."""
 from __future__ import annotations
 
 import operator
-from typing import Annotated, TypedDict, Any
+from typing import Annotated, Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
