@@ -32,13 +32,17 @@ export function AuthForm() {
     google: false,
     github: false,
   });
+  const [loaded, setLoaded] = useState(false);
 
   // Show a provider button only when its credentials are configured on the server.
+  // (A hard-coded "always show both" broke live sign-in: Google isn't configured on
+  // Render, so its button 404'd with PROVIDER_NOT_FOUND. Gate on the real config.)
   useEffect(() => {
     fetch("/api/auth-providers")
       .then((r) => (r.ok ? r.json() : { google: false, github: false }))
       .then((p: SocialProviders) => setProviders(p))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoaded(true));
   }, []);
 
   async function onSocial(provider: "google" | "github") {
@@ -52,10 +56,7 @@ export function AuthForm() {
     }
   }
 
-  // Force buttons to render for UI display even if backend isn't configured yet
-  const hasSocial = true;
-  providers.google = true;
-  providers.github = true;
+  const hasSocial = providers.google || providers.github;
 
   return (
     <div className="flex flex-col w-full gap-4 mt-6">
@@ -99,13 +100,15 @@ export function AuthForm() {
             </motion.button>
           )}
         </div>
-      ) : (
-        <motion.div 
+      ) : loaded ? (
+        <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           className="text-sm text-center text-vayu-muted p-4 border border-white/5 rounded-xl bg-white/5 backdrop-blur-sm"
         >
           Authentication providers are currently being configured.
         </motion.div>
+      ) : (
+        <div className="h-[104px] animate-pulse rounded-xl bg-white/5" aria-hidden />
       )}
       
       <p className="mt-6 text-xs text-center text-vayu-muted opacity-80">
