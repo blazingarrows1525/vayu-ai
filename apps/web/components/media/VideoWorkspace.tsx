@@ -21,21 +21,20 @@ export function VideoWorkspace() {
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("workspace_id", "default"); // Assuming a default workspace
 
     try {
-      const res = await fetch("/api/proxy/v1/media/video", {
+      const res = await fetch("/api/media/video", {
         method: "POST",
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Video processing failed");
-
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || data.error || "Video processing failed");
       setSummary(data.summary);
     } catch (error) {
       console.error(error);
-      setSummary("Error processing video. Make sure the backend supports ffmpeg and the NVIDIA models are configured.");
+      const reason = error instanceof Error ? error.message : "Video processing failed";
+      setSummary(`Error processing video: ${reason}`);
     } finally {
       setIsProcessing(false);
     }

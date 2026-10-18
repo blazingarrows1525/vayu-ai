@@ -3,6 +3,7 @@ The agent decides to use tools or returns a final answer."""
 
 from __future__ import annotations
 
+import asyncio
 import operator
 from typing import Annotated, Any, TypedDict
 
@@ -12,6 +13,10 @@ from app.agents.registry import AgentConfig
 from app.agents.tools import execute_tool, get_tools_dict
 from app.services.llm import LLMUnavailable
 
+# Each round is one agent → tools hop; the cap bounds cost and keeps the graph well
+# under LangGraph's default recursion limit (25 super-steps).
+MAX_TOOL_ROUNDS = 6
+
 
 class AgentState(TypedDict, total=False):
     task: str
@@ -19,6 +24,7 @@ class AgentState(TypedDict, total=False):
     output: str
     steps: Annotated[list[dict], operator.add]
     tokens: Annotated[int, operator.add]
+    tool_rounds: Annotated[int, operator.add]
 
 
 def build_agent_graph(provider: Any, config: AgentConfig):
@@ -50,43 +56,47 @@ def build_agent_graph(provider: Any, config: AgentConfig):
                 return {"output": "LLM Unavailable"}
 
         try:
-            text, usage, tool_calls = await provider.chat(
+            turn = await provider.chat(
                 messages=msgs, tools=get_tools_dict(), max_tokens=2048
             )
-            assistant_msg: dict[str, Any] = {"role": "assistant", "content": text or ""}
-            
-            if tool_calls:
-                assistant_msg["tool_calls"] = [
-                    {
-                        "id": tc["id"],
-                        "type": "function",
-                        "function": {"name": tc["name"], "arguments": tc["arguments"]}
-                    } for tc in tool_calls
-                ]
-                
-            msgs_to_append.append(assistant_msg)
-            
-            return {
-                "messages": msgs_to_append,
-                "output": text or "",
-                "tokens": usage.input_tokens + usage.output_tokens,
-                "steps": [{"node": "agent", "type": "llm", "output": text or f"Requested tools: {len(tool_calls or [])}", "tokens": usage.input_tokens + usage.output_tokens}],
-            }
         except LLMUnavailable:
             return {"output": "LLM Unavailable"}
 
+        assistant_msg: dict[str, Any] = {"role": "assistant", "content": turn.text or ""}
+        if turn.tool_calls:
+            assistant_msg["tool_calls"] = [
+                {
+                    "id": tc["id"],
+                    "type": "function",
+                    "function": {"name": tc["name"], "arguments": tc["arguments"]}
+                } for tc in turn.tool_calls
+            ]
+        if turn.provider_content is not None:
+            assistant_msg["provider_content"] = turn.provider_content
+
+        msgs_to_append.append(assistant_msg)
+        tokens = turn.usage.input_tokens + turn.usage.output_tokens
+
+        return {
+            "messages": msgs_to_append,
+            "output": turn.text or "",
+            "tokens": tokens,
+            "steps": [{"node": "agent", "type": "llm", "output": turn.text or f"Requested tools: {len(turn.tool_calls or [])}", "tokens": tokens}],
+        }
+
     async def tools_node(state: AgentState) -> dict:
-        last_msg = state["messages"][-1]
-        tool_calls = last_msg.get("tool_calls", [])
-        
+        tool_calls = state["messages"][-1].get("tool_calls", [])
+
+        # Tools do blocking I/O / CPU work — run them in threads, concurrently.
+        results = await asyncio.gather(*(
+            asyncio.to_thread(execute_tool, tc["function"]["name"], tc["function"]["arguments"])
+            for tc in tool_calls
+        ))
+
         msgs_to_append = []
         step_outputs = []
-        
-        for tc in tool_calls:
+        for tc, result in zip(tool_calls, results, strict=True):
             t_name = tc["function"]["name"]
-            t_args = tc["function"]["arguments"]
-            result = execute_tool(t_name, t_args)
-            
             msgs_to_append.append({
                 "role": "tool",
                 "tool_call_id": tc["id"],
@@ -94,10 +104,19 @@ def build_agent_graph(provider: Any, config: AgentConfig):
                 "content": result
             })
             step_outputs.append(f"[{t_name}] -> {result[:200]}...")
-            
+
         return {
             "messages": msgs_to_append,
+            "tool_rounds": 1,
             "steps": [{"node": "tools", "type": "tool", "output": "\n".join(step_outputs), "tokens": 0}],
+        }
+
+    async def give_up_node(state: AgentState) -> dict:
+        note = f"Stopped after {MAX_TOOL_ROUNDS} tool rounds without a final answer."
+        partial = (state.get("output") or "").strip()
+        return {
+            "output": f"{partial}\n\n{note}" if partial else note,
+            "steps": [{"node": "agent", "type": "limit", "output": note, "tokens": 0}],
         }
 
     def should_continue(state: AgentState) -> str:
@@ -108,13 +127,19 @@ def build_agent_graph(provider: Any, config: AgentConfig):
             return END
         last_msg = msgs[-1]
         if last_msg.get("tool_calls"):
+            if state.get("tool_rounds", 0) >= MAX_TOOL_ROUNDS:
+                return "give_up"
             return "tools"
         return END
 
     graph = StateGraph(AgentState)
     graph.add_node("agent", agent_node)
     graph.add_node("tools", tools_node)
+    graph.add_node("give_up", give_up_node)
     graph.add_edge(START, "agent")
-    graph.add_conditional_edges("agent", should_continue, {"tools": "tools", END: END})
+    graph.add_conditional_edges(
+        "agent", should_continue, {"tools": "tools", "give_up": "give_up", END: END}
+    )
     graph.add_edge("tools", "agent")
+    graph.add_edge("give_up", END)
     return graph.compile()

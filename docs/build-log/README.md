@@ -29,3 +29,7 @@ the big picture and resume guide.
 | 21 | Vector-store adapters (Qdrant/Pinecone/Chroma) | [phase-21-vectorstore.md](phase-21-vectorstore.md) | ✅ |
 | 22 | Playwright e2e scaffold | [phase-22-e2e.md](phase-22-e2e.md) | ✅ |
 | 23 | Dockerized run + Render deploy (live) | [phase-23-deploy.md](phase-23-deploy.md) | ✅ |
+| 24 | Cold starts, RAG expansion, CI-gated deploys | [phase-24-hardening.md](phase-24-hardening.md) | ✅ |
+| 25 | Multi-provider LLMs, vector stores, OAuth, S3 | [phase-25-providers-auth-storage.md](phase-25-providers-auth-storage.md) | ✅ |
+| 26 | Cinematic 3D web experience | [phase-26-web-experience.md](phase-26-web-experience.md) | ✅ |
+| 27 | Multimodal & agent hardening (+ July NVIDIA/voice/video/ReAct work) | [phase-27-hardening.md](phase-27-hardening.md) | ✅ |

@@ -70,11 +70,14 @@ async def websocket_chat(
             if not safety_check.is_safe:
                 reject = "I'm sorry, I cannot fulfill that request."
                 await websocket.send_json({"type": "token", "content": reject})
-                # Synthesize rejection
-                if voice_service.available:
-                    audio_bytes = await voice_service.synthesize(reject)
-                    b64_audio = base64.b64encode(audio_bytes).decode("utf-8")
-                    await websocket.send_json({"type": "audio", "data": b64_audio})
+                # Synthesize rejection (best-effort, like every spoken reply)
+                if voice_service.tts_available:
+                    try:
+                        audio_bytes = await voice_service.synthesize(reject)
+                        b64_audio = base64.b64encode(audio_bytes).decode("utf-8")
+                        await websocket.send_json({"type": "audio", "data": b64_audio})
+                    except Exception as e:
+                        log.error("websocket_tts_error", error=str(e))
                 continue
                 
             # 4. Stream LLM response
@@ -104,7 +107,7 @@ async def websocket_chat(
                 continue
                 
             # 6. Run TTS and send audio back
-            if voice_service.available:
+            if voice_service.tts_available:
                 try:
                     out_audio_bytes = await voice_service.synthesize(resp_text)
                     out_b64_audio = base64.b64encode(out_audio_bytes).decode("utf-8")

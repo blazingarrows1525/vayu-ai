@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import ast
 import json
+import operator
 import urllib.parse
 import urllib.request
 from collections.abc import Callable
@@ -61,14 +63,47 @@ def search_wikipedia(query: str) -> str:
         return f"Wikipedia search failed: {e}"
 
 
+_BIN_OPS: dict[type, Callable[[float, float], float]] = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv,
+    ast.Mod: operator.mod,
+    ast.Pow: operator.pow,
+}
+_UNARY_OPS: dict[type, Callable[[float], float]] = {ast.UAdd: operator.pos, ast.USub: operator.neg}
+# Bounds keep every intermediate cheap: `9**9**9**9` would otherwise pin a CPU indefinitely.
+_MAX_EXPRESSION_LEN = 500
+_MAX_EXPONENT = 100
+_MAX_MAGNITUDE = 1e100
+
+
+def _eval_arithmetic(node: ast.AST) -> float:
+    if isinstance(node, ast.Expression):
+        return _eval_arithmetic(node.body)
+    if isinstance(node, ast.Constant) and type(node.value) in (int, float):
+        return node.value
+    if isinstance(node, ast.UnaryOp) and type(node.op) in _UNARY_OPS:
+        return _UNARY_OPS[type(node.op)](_eval_arithmetic(node.operand))
+    if isinstance(node, ast.BinOp) and type(node.op) in _BIN_OPS:
+        left, right = _eval_arithmetic(node.left), _eval_arithmetic(node.right)
+        if isinstance(node.op, ast.Pow) and abs(right) > _MAX_EXPONENT:
+            raise ValueError(f"exponent larger than {_MAX_EXPONENT}")
+        result = _BIN_OPS[type(node.op)](left, right)
+        if isinstance(result, complex) or abs(result) > _MAX_MAGNITUDE:
+            raise ValueError("result out of range")
+        return result
+    raise ValueError("only numbers and + - * / // % ** ( ) are allowed")
+
+
 def calculator(expression: str) -> str:
-    """Evaluate a mathematical expression safely."""
+    """Evaluate an arithmetic expression without eval(): parse to an AST and walk only
+    numeric literals and arithmetic operators, with bounded exponents and magnitudes."""
+    if len(expression) > _MAX_EXPRESSION_LEN:
+        return "Calculator error: expression too long."
     try:
-        # Very restricted eval
-        allowed = "0123456789+-*/(). "
-        if any(c not in allowed for c in expression):
-            return "Error: Invalid characters in expression."
-        return str(eval(expression, {"__builtins__": None}, {}))
+        return str(_eval_arithmetic(ast.parse(expression, mode="eval")))
     except Exception as e:
         return f"Calculator error: {e}"
 
@@ -91,7 +126,7 @@ TOOLS = [
     ),
     Tool(
         name="calculator",
-        description="Evaluate basic mathematical expressions (e.g. 2 + 2, (5 * 4) / 2).",
+        description="Evaluate arithmetic expressions with + - * / // % ** and parentheses (e.g. 2 + 2, (5 * 4) / 2, 2 ** 10).",
         parameters={
             "type": "object",
             "properties": {

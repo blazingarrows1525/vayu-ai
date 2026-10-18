@@ -32,6 +32,18 @@ class VoiceService:
             self._model = ""
             self._provider = "none"
 
+        # TTS prefers OpenAI's speech endpoint (known-good); otherwise it tries the STT
+        # client. Callers treat synthesis as best-effort and fall back to text-only replies.
+        if settings.openai_api_key:
+            self._tts_client: AsyncOpenAI | None = (
+                self._client if self._provider == "openai"
+                else AsyncOpenAI(api_key=settings.openai_api_key)
+            )
+            self._tts_model = "tts-1"
+        else:
+            self._tts_client = self._client
+            self._tts_model = "nvidia/tts" if self._provider == "nvidia" else ""
+
     @property
     def available(self) -> bool:
         return self._client is not None
@@ -49,20 +61,19 @@ class VoiceService:
 
                 import riva.client
 
+                from app.services.ffmpeg import run_ffmpeg, safe_upload_path
+
                 # Convert incoming audio (often webm from browser) to 16kHz mono WAV for Riva
                 with tempfile.TemporaryDirectory() as tmpdir:
-                    in_path = Path(tmpdir) / "in_audio"
+                    in_path = safe_upload_path(Path(tmpdir), filename)
                     in_path.write_bytes(audio_bytes)
                     out_path = Path(tmpdir) / "out.wav"
-                    
-                    proc = await asyncio.create_subprocess_exec(
-                        "ffmpeg", "-y", "-i", str(in_path), "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", str(out_path),
-                        stdout=asyncio.subprocess.PIPE,
-                        stderr=asyncio.subprocess.PIPE
+
+                    ok = await run_ffmpeg(
+                        in_path, "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
+                        str(out_path),
                     )
-                    await proc.communicate()
-                    
-                    if not out_path.exists():
+                    if not ok or not out_path.exists():
                         raise RuntimeError("Failed to convert audio for Riva via ffmpeg.")
                     wav_bytes = out_path.read_bytes()
 
@@ -106,21 +117,22 @@ class VoiceService:
             log.error("voice_transcription_failed", provider=self._provider, error=str(exc))
             raise
 
+    @property
+    def tts_available(self) -> bool:
+        return self._tts_client is not None
+
     async def synthesize(self, text: str, voice: str = "alloy") -> bytes:
-        """Convert text to speech (TTS).
-        NVIDIA NIM does have TTS models, but if unavailable, we can fallback to OpenAI TTS.
-        For now, this assumes the client supports the /v1/audio/speech endpoint.
-        """
-        if not self._client:
-            raise ValueError("Voice service not configured.")
-        
-        model = "tts-1" if self._provider == "openai" else "nvidia/tts" 
-        
+        """Convert text to speech (TTS) as WAV bytes via an OpenAI-compatible
+        /audio/speech endpoint. Raises on failure — callers degrade to text-only."""
+        if not self._tts_client:
+            raise ValueError("Text-to-speech not configured.")
+
         try:
-            resp = await self._client.audio.speech.create(
-                model=model,
+            resp = await self._tts_client.audio.speech.create(
+                model=self._tts_model,
                 voice=voice,
                 input=text,
+                response_format="wav",
             )
             return resp.read()
         except Exception as exc:

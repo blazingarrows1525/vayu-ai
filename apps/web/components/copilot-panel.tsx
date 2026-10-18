@@ -19,6 +19,19 @@ const COMMANDS: { value: string; label: string }[] = [
   { value: "/generate-docs", label: "Docs" },
 ];
 
+// No `model` lets the AI plane use that provider's configured model; no `provider`
+// lets it use the workspace default (with failover).
+type ModelChoice = { id: string; label: string; provider?: string; model?: string };
+const DEFAULT_MODEL: ModelChoice = { id: "default", label: "Workspace default" };
+const MODELS: ModelChoice[] = [
+  DEFAULT_MODEL,
+  { id: "nvidia-405b", label: "NVIDIA Llama 3.1 405B", provider: "nvidia", model: "meta/llama-3.1-405b-instruct" },
+  { id: "nvidia-70b", label: "NVIDIA Llama 3.1 70B", provider: "nvidia", model: "meta/llama-3.1-70b-instruct" },
+  { id: "nvidia-8b", label: "NVIDIA Llama 3.1 8B", provider: "nvidia", model: "meta/llama-3.1-8b-instruct" },
+  { id: "openai", label: "GPT-4o", provider: "openai", model: "gpt-4o" },
+  { id: "anthropic", label: "Claude", provider: "anthropic" },
+];
+
 const inputClass =
   "rounded-lg border border-vayu-border bg-vayu-bg px-2 py-1.5 text-sm text-vayu-fg outline-none focus:border-vayu-accent";
 
@@ -27,16 +40,8 @@ export function CopilotPanel({ editor }: { editor: Editor | null }) {
   const [command, setCommand] = useState("/improve");
   const [instruction, setInstruction] = useState("");
 
-  const [model, setModel] = useState("meta/llama-3.1-405b-instruct");
-  const [provider, setProvider] = useState("nvidia");
-
-  const MODELS = [
-    { value: "meta/llama-3.1-405b-instruct", label: "NVIDIA Llama 3.1 405B", provider: "nvidia" },
-    { value: "meta/llama-3.1-70b-instruct", label: "NVIDIA Llama 3.1 70B", provider: "nvidia" },
-    { value: "meta/llama-3.1-8b-instruct", label: "NVIDIA Llama 3.1 8B", provider: "nvidia" },
-    { value: "gpt-4o", label: "GPT-4o", provider: "openai" },
-    { value: "claude-3-5-sonnet-20240620", label: "Claude 3.5 Sonnet", provider: "anthropic" }
-  ];
+  const [modelId, setModelId] = useState("default");
+  const choice = MODELS.find((m) => m.id === modelId) ?? DEFAULT_MODEL;
 
   const isGenerate = command.startsWith("/generate");
   const needsTone = command === "/change-tone";
@@ -55,8 +60,8 @@ export function CopilotPanel({ editor }: { editor: Editor | null }) {
       selection: isGenerate ? undefined : selection,
       context: isGenerate ? instruction || selection : undefined,
       tone: needsTone ? instruction : undefined,
-      model,
-      provider,
+      model: choice.model,
+      provider: choice.provider,
     });
   }
 
@@ -83,16 +88,12 @@ export function CopilotPanel({ editor }: { editor: Editor | null }) {
           ))}
         </select>
         <select
-          value={model}
-          onChange={(e) => {
-            setModel(e.target.value);
-            const m = MODELS.find((m) => m.value === e.target.value);
-            if (m) setProvider(m.provider);
-          }}
+          value={modelId}
+          onChange={(e) => setModelId(e.target.value)}
           className={inputClass}
         >
           {MODELS.map((m) => (
-            <option key={m.value} value={m.value}>
+            <option key={m.id} value={m.id}>
               {m.label}
             </option>
           ))}
