@@ -22,6 +22,7 @@ import {
   PerformanceMonitor,
   Sparkles,
   Environment,
+  Lightformer,
 } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import * as THREE from "three";
@@ -146,7 +147,13 @@ export default function HeroScene() {
         <directionalLight position={[4, 3, 5]} intensity={1.1} color={ACCENT} />
         <directionalLight position={[-5, -2, -4]} intensity={0.5} color={VIOLET} />
         <directionalLight position={[0, -5, 2]} intensity={0.6} color={PINK} />
-        <Environment preset="city" />
+        {/* Built in-scene, not `preset` — presets fetch an HDR from a CDN at runtime and
+            the whole canvas suspends (frozen orb) until it arrives, or forever if blocked. */}
+        <Environment resolution={64}>
+          <Lightformer intensity={2} color={ACCENT} position={[4, 3, 4]} scale={[6, 6, 1]} />
+          <Lightformer intensity={1.2} color={VIOLET} position={[-5, -1, -3]} scale={[6, 6, 1]} />
+          <Lightformer intensity={1.5} color="#ffffff" position={[0, 5, -2]} rotation-x={Math.PI / 2} scale={[8, 3, 1]} />
+        </Environment>
         <AICore still={still} />
         <ContactShadows position={[0, -2.2, 0]} opacity={0.4} scale={9} blur={2.8} far={4} />
         {effects && (

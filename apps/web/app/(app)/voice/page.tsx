@@ -18,21 +18,20 @@ export default function VoicePage() {
       const formData = new FormData();
       formData.append("file", blob, "audio.webm");
       formData.append("action", "chat");
-      formData.append("workspace_id", "default"); // Assuming default for now
 
-      const res = await fetch("/api/proxy/v1/media/voice", {
+      const res = await fetch("/api/media/voice", {
         method: "POST",
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Failed to process voice");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || data.error || "Failed to process voice");
 
-      const data = await res.json();
       setTranscript(data.transcript);
 
       if (data.audio_url && audioRef.current) {
         audioRef.current.src = data.audio_url;
-        audioRef.current.play();
+        audioRef.current.play().catch(() => {});
       }
     } catch (err: any) {
       setError(err.message || "An error occurred during voice processing.");

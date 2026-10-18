@@ -36,6 +36,11 @@ log = structlog.get_logger(__name__)
 # USD per 1M tokens: (input, output). Approximate list-prices for cost estimation.
 _PRICING: dict[str, tuple[float, float]] = {
     # Anthropic
+    "claude-opus-5-5": (4.0, 20.0),
+    "claude-opus-5": (5.0, 25.0),
+    "claude-sonnet-5-5": (2.0, 10.0),
+    "claude-sonnet-5": (2.0, 10.0),
+    "claude-haiku-5-5": (0.10, 0.50),
     "claude-opus-4-8": (5.0, 25.0),
     "claude-opus-4-7": (5.0, 25.0),
     "claude-sonnet-4-6": (3.0, 15.0),
@@ -64,6 +69,19 @@ class Usage:
     cost_usd: float
     model: str
     provider: str
+
+
+@dataclass(slots=True)
+class ChatTurn:
+    """One tool-capable chat completion. `tool_calls` items are
+    `{"id", "name", "arguments"}` (arguments = JSON string). `provider_content` is the
+    provider's raw assistant content, replayed verbatim on the next turn when the
+    provider needs it (Anthropic thinking blocks must round-trip unchanged)."""
+
+    text: str
+    usage: Usage
+    tool_calls: list[dict] | None = None
+    provider_content: list[dict] | None = None
 
 
 class LLMUnavailable(RuntimeError):
@@ -117,7 +135,64 @@ class LLMProvider(Protocol):
 
     async def chat(
         self, *, messages: list[dict], model: str | None = ..., max_tokens: int = ..., tools: list[dict] | None = ...
-    ) -> tuple[str, Usage, list[dict] | None]: ...
+    ) -> ChatTurn: ...
+
+
+def _to_anthropic_tool(tool: dict) -> dict:
+    """OpenAI `{"type": "function", "function": {...}}` → Anthropic tool definition."""
+    fn = tool["function"]
+    return {
+        "name": fn["name"],
+        "description": fn.get("description", ""),
+        "input_schema": fn.get("parameters") or {"type": "object", "properties": {}},
+    }
+
+
+def _to_anthropic_messages(messages: list[dict]) -> tuple[str, list[dict]]:
+    """OpenAI-style chat history → (system, Anthropic messages). Assistant turns this
+    provider produced are replayed verbatim via `provider_content`; consecutive tool
+    results are batched into a single user turn, as the Messages API expects."""
+    system_parts: list[str] = []
+    out: list[dict] = []
+    for m in messages:
+        role = m.get("role")
+        if role == "system":
+            system_parts.append(m.get("content") or "")
+        elif role == "tool":
+            block = {
+                "type": "tool_result",
+                "tool_use_id": m["tool_call_id"],
+                "content": m.get("content") or "",
+            }
+            prev = out[-1] if out else None
+            if (
+                prev is not None
+                and prev["role"] == "user"
+                and isinstance(prev["content"], list)
+                and all(b.get("type") == "tool_result" for b in prev["content"])
+            ):
+                prev["content"].append(block)
+            else:
+                out.append({"role": "user", "content": [block]})
+        elif role == "assistant":
+            content = m.get("provider_content")
+            if content is None:
+                content = []
+                if m.get("content"):
+                    content.append({"type": "text", "text": m["content"]})
+                for tc in m.get("tool_calls") or []:
+                    fn = tc["function"]
+                    try:
+                        args = json.loads(fn.get("arguments") or "{}")
+                    except json.JSONDecodeError:
+                        args = {}
+                    content.append(
+                        {"type": "tool_use", "id": tc["id"], "name": fn["name"], "input": args}
+                    )
+            out.append({"role": "assistant", "content": content})
+        else:
+            out.append({"role": "user", "content": m.get("content") or ""})
+    return "\n\n".join(p for p in system_parts if p), out
 
 
 class AnthropicProvider:
@@ -195,8 +270,39 @@ class AnthropicProvider:
 
     async def chat(
         self, *, messages: list[dict], model: str | None = None, max_tokens: int = 1024, tools: list[dict] | None = None
-    ) -> tuple[str, Usage, list[dict] | None]:
-        raise NotImplementedError("AnthropicProvider does not support chat with tools yet")
+    ) -> ChatTurn:
+        if self._client is None:
+            raise LLMUnavailable("ANTHROPIC_API_KEY is not configured")
+        mdl = model or self._settings.default_chat_model
+        system, convo = _to_anthropic_messages(messages)
+        kwargs: dict = {}
+        if system:
+            kwargs["system"] = system
+        if tools:
+            kwargs["tools"] = [_to_anthropic_tool(t) for t in tools]
+        msg = await self._client.messages.create(
+            model=mdl, max_tokens=max_tokens, messages=convo, **kwargs  # type: ignore[arg-type]
+        )
+        text = "".join(b.text for b in msg.content if b.type == "text")
+        # Only a completed tool_use turn is runnable — a max_tokens cut can leave partial input.
+        tool_calls = None
+        if msg.stop_reason == "tool_use":
+            tool_calls = [
+                {"id": b.id, "name": b.name, "arguments": json.dumps(b.input)}
+                for b in msg.content
+                if b.type == "tool_use"
+            ] or None
+        if msg.stop_reason == "refusal" and not text:
+            text = "The model declined this request."
+        usage = Usage(
+            msg.usage.input_tokens,
+            msg.usage.output_tokens,
+            estimate_cost(mdl, msg.usage.input_tokens, msg.usage.output_tokens),
+            mdl,
+            self.provider,
+        )
+        content = [b.model_dump(exclude_none=True) for b in msg.content]
+        return ChatTurn(text, usage, tool_calls, content)
 
 
 class OpenAICompatibleProvider:
@@ -302,16 +408,18 @@ class OpenAICompatibleProvider:
 
     async def chat(
         self, *, messages: list[dict], model: str | None = None, max_tokens: int = 1024, tools: list[dict] | None = None
-    ) -> tuple[str, Usage, list[dict] | None]:
+    ) -> ChatTurn:
         if self._client is None:
             raise LLMUnavailable(f"{self.provider} API key is not configured")
         mdl = model or self._default_model
         kwargs = {}
         if tools:
             kwargs["tools"] = tools
+        # provider_content is Anthropic-only state; OpenAI-compatible APIs reject unknown keys.
+        wire = [{k: v for k, v in m.items() if k != "provider_content"} for m in messages]
 
         resp = await self._client.chat.completions.create(
-            model=mdl, max_tokens=max_tokens, messages=messages, **kwargs  # type: ignore
+            model=mdl, max_tokens=max_tokens, messages=wire, **kwargs  # type: ignore
         )
         
         msg = resp.choices[0].message
@@ -330,11 +438,15 @@ class OpenAICompatibleProvider:
         usage = resp.usage
         in_tok = usage.prompt_tokens if usage else 0
         out_tok = usage.completion_tokens if usage else 0
-        return text, Usage(in_tok, out_tok, estimate_cost(mdl, in_tok, out_tok), mdl, self.provider), tool_calls
+        return ChatTurn(
+            text, Usage(in_tok, out_tok, estimate_cost(mdl, in_tok, out_tok), mdl, self.provider),
+            tool_calls,
+        )
 
 
-# Preference order for failover when the requested/default provider isn't configured.
-PROVIDER_ORDER = ["anthropic", "openai", "nvidia", "gemini", "groq", "openrouter"]
+# Failover order when the requested/default provider isn't configured — cheapest first,
+# so a missing or failing Gemini key never silently escalates to the priciest provider.
+PROVIDER_ORDER = ["gemini", "groq", "nvidia", "openai", "openrouter", "anthropic"]
 
 
 def build_provider(name: str, settings: Settings) -> LLMProvider:
@@ -423,6 +535,14 @@ def _resolve_chain(settings: Settings, preferred: str | None = None) -> list[LLM
         if provider.available:
             chain.append(provider)
     return chain
+
+
+def live_llm_kwargs(settings: Settings) -> dict:
+    """Routing for latency-bound voice replies: the fast Gemini model when Gemini is
+    configured, else the normal default chain (a Gemini id is never sent elsewhere)."""
+    if settings.gemini_api_key:
+        return {"preferred": "gemini", "model": settings.live_chat_model}
+    return {}
 
 
 async def generate(

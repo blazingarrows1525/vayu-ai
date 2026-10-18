@@ -7,6 +7,7 @@ import json
 import uuid
 from collections.abc import AsyncIterator
 
+import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.graph import build_agent_graph
@@ -14,6 +15,8 @@ from app.agents.registry import AGENTS
 from app.core.config import Settings
 from app.db.models import AgentRun, AgentStep
 from app.services.llm import AnthropicProvider, LLMUnavailable, resolve_llm
+
+log = structlog.get_logger(__name__)
 
 
 def _provider(settings: Settings):
@@ -51,7 +54,15 @@ async def run_and_persist(
     session.add(agent_run)
     await session.flush()
 
-    final = await graph.ainvoke({"task": task})
+    try:
+        final = await graph.ainvoke({"task": task})
+    except Exception as exc:  # noqa: BLE001 - record the failure instead of a stuck "running" row
+        log.error("agent_run_failed", agent=agent_type, error=str(exc))
+        agent_run.status = "failed"
+        agent_run.output = {"result": "", "error": "The agent run failed."}
+        agent_run.finished_at = _now()
+        await session.commit()
+        return agent_run, []
     steps = final.get("steps", [])
     for index, step in enumerate(steps):
         session.add(
@@ -85,13 +96,17 @@ async def stream_run(
     graph = build_agent_graph(_provider(settings), config)
 
     yield _sse("start", {"agent": agent_type})
-    async for event in graph.astream({"task": task}):
-        for node, update in event.items():
-            snippet = update.get("output") or ""
-            if not snippet and "steps" in update and update["steps"]:
-                snippet = update["steps"][-1].get("output", "")
-            yield _sse(
-                "step",
-                {"node": node, "output": snippet[:800], "tokens": update.get("tokens", 0)},
-            )
+    try:
+        async for event in graph.astream({"task": task}):
+            for node, update in event.items():
+                snippet = update.get("output") or ""
+                if not snippet and "steps" in update and update["steps"]:
+                    snippet = update["steps"][-1].get("output", "")
+                yield _sse(
+                    "step",
+                    {"node": node, "output": snippet[:800], "tokens": update.get("tokens", 0)},
+                )
+    except Exception as exc:  # noqa: BLE001 - surface as an error frame the UI renders
+        log.error("agent_stream_failed", agent=agent_type, error=str(exc))
+        yield _sse("step", {"node": "error", "output": "The agent run failed.", "tokens": 0})
     yield _sse("done", {})

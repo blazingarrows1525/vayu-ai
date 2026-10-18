@@ -4,9 +4,26 @@
 > Claude Code session (or a human) understand *what* VAYU AI is, *how* it's built,
 > *why* each decision was made, and *exactly where to pick up*. Read this first.
 
-Last updated after **Phase 15** (floating UI overhaul). All core phases are complete and
-committed; the build is green on both planes (web `next build` + `vitest`; ai `ruff` + `pytest`).
-Live features activate with Docker (DB) + provider keys.
+Last updated after **Phase 28** (VAYU Live + Gemini-first). All phases are committed; the
+build is green on both planes (web `next build` + `vitest`; ai `ruff` + `pytest`). Live features
+activate with Docker (DB) + provider keys. Phases 15+ each have a log in
+[`docs/build-log/`](build-log/README.md) — read the latest one first when resuming.
+
+> **Multimodal + agents (Phases 26–27):** NVIDIA NIM joined the provider set (chat, embeddings
+> — the `.env.example` default — rerank, Riva STT, Llama 3.2 Vision). `/voice` (push-to-talk → STT →
+> safety → LLM → TTS) and `/media` (video → keyframes + transcript → summary) both ingest into
+> RAG via `POST /v1/media/{voice,video}` behind the BFF route `app/api/media/[kind]`. Agents are a
+> **ReAct tool-calling loop** (`agents/graph.py`, tools in `agents/tools.py`, max 6 tool rounds)
+> working on every provider, Anthropic included (`ChatTurn` carries provider-native content).
+> Untrusted media only reaches ffmpeg through `services/ffmpeg.py` (demuxer/protocol whitelist).
+> See `docs/build-log/phase-27-hardening.md`.
+
+> **VAYU Live + Gemini-first (Phase 28):** Gemini is the default provider and failover runs
+> cheapest-first; voice/Live use `LIVE_CHAT_MODEL` (Gemini 2.5 Flash). `/live` is a realtime
+> voice + text console over `WS /v1/ws/chat` — the browser gets `{url, token}` from
+> `/api/realtime/session` and connects to the AI plane directly. The 3D voice core
+> (`components/live/live-orb.tsx`) reads Web Audio analysers in `useFrame`, never React state.
+> See `docs/build-log/phase-28-live.md`.
 
 > **UI (Phase 15):** the app now has a "command-center" visual language — animated aurora
 > background + glassmorphism + neon glow (`app/globals.css`) and a global **floating AI dock**
@@ -93,7 +110,7 @@ apps/ai         FastAPI — RAG + LangGraph agents (intelligence plane, uv)
   app/rag/      parsing, chunking, pipeline
   app/agents/   registry (7 agents), graph (LangGraph), runner
   app/db/       base (async engine), models, migrations (Alembic)
-  app/api/v1/   health, copilot, rag, agents, router
+  app/api/v1/   health, copilot, rag, agents, media (voice/video), ws (chat), router
 packages/db     Drizzle schema (product tables) + client — source of truth
 packages/editor @vayu/editor — Tiptap editor + extensions
 infra/docker    compose + pgvector init SQL
@@ -180,8 +197,13 @@ Per-phase detail: [`docs/build-log/`](build-log/README.md).
   the `jwt` plugin needs a `jwks` table in the Drizzle schema.
 - **Tiptap v3:** `useEditor({ immediatelyRender: false })` for Next SSR; StarterKit bundles
   codeBlock/link/underline (disable codeBlock to use CodeBlockLowlight).
-- **Default LLM = `claude-opus-4-8`** (per the claude-api skill; don't downgrade for cost —
-  user's call). Anthropic has no embeddings API → embeddings via OpenAI.
+- **Default LLM = Gemini** (`gemini-2.5-pro`; voice/Live `gemini-2.5-flash`) — the user's call,
+  for cost. Failover is cheapest-first; Anthropic is last. Anthropic has no embeddings API →
+  embeddings via NVIDIA / OpenAI / Voyage.
+- **`html, body { overflow-x: hidden }` makes `position: sticky` inert** — pin things with
+  `fixed`, or size the page to the viewport.
+- **Security headers live in `next.config.ts`:** mic needs `microphone=(self)`, audio replies
+  need `media-src data: blob:`, and `connect-src https:` does *not* allow `wss:`.
 - **AI tables ≠ product tables.** Product schema is Drizzle (`packages/db`); AI schema is
   SQLAlchemy/Alembic (`apps/ai/app/db`). The `ai_generation` ledger is product-owned, so the
   **BFF** writes it by teeing the copilot SSE `usage` event.

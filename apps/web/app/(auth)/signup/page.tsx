@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
 export default function SignupPage() {
-  // Authentication is now strictly OAuth, so login and signup are the same flow.
-  redirect("/login");
+  // One auth page; it opens in create-account mode for email sign-ups.
+  redirect("/login?mode=signup");
 }

@@ -8,14 +8,19 @@ unlock more. Live status for any deployment is at **`GET /v1/providers`**.
 
 | Provider | Env key | Default model (`*_CHAT_MODEL`) | Notes |
 |---|---|---|---|
-| Anthropic | `ANTHROPIC_API_KEY` | `claude-sonnet-4-6` (`DEFAULT_CHAT_MODEL`) | native SDK, streaming |
-| Google Gemini | `GEMINI_API_KEY` | `gemini-2.5-pro` | via Gemini's OpenAI-compatible endpoint |
+| Google Gemini (**default**) | `GEMINI_API_KEY` | `gemini-2.5-pro`; voice/Live use `gemini-2.5-flash` (`LIVE_CHAT_MODEL`) | via Gemini's OpenAI-compatible endpoint |
+| Anthropic | `ANTHROPIC_API_KEY` | `claude-sonnet-4-6` (`DEFAULT_CHAT_MODEL`) | native SDK, streaming, tool calling |
+| NVIDIA NIM | `NVIDIA_API_KEY` | `meta/llama-3.1-405b-instruct` | OpenAI-compatible; also STT / video / safety |
 | OpenAI | `OPENAI_API_KEY` | `gpt-4o-mini` | |
 | Groq | `GROQ_API_KEY` | `llama-3.3-70b-versatile` | hosted OSS models |
 | OpenRouter | `OPENROUTER_API_KEY` | `anthropic/claude-3.5-sonnet` | any OpenRouter model id |
 
-- **Preferred provider:** `DEFAULT_LLM_PROVIDER` (default `anthropic`). A request may override it
-  per call (copilot `provider` field).
+- **Preferred provider:** `DEFAULT_LLM_PROVIDER` (default `gemini` — the cheapest capable option).
+  A request may override it per call (copilot `provider` field).
+- **Failover order is cheapest-first:** gemini → groq → nvidia → openai → openrouter → anthropic,
+  so an unset or failing Gemini key never silently escalates to the priciest provider.
+- **Voice + VAYU Live** route to `LIVE_CHAT_MODEL` (default `gemini-2.5-flash`) whenever
+  `GEMINI_API_KEY` is set: short spoken replies are latency-bound, and Flash is ~4× cheaper.
 - **Cross-provider fallback:** `generate()` / `generate_json()` / `stream_generate()` try the
   preferred → default → remaining *configured* providers in order. If the preferred one errors
   (after its own SDK retries), the next configured provider handles the request. The requested
@@ -29,12 +34,15 @@ unlock more. Live status for any deployment is at **`GET /v1/providers`**.
 
 ### Gemini specifics
 
-You said you have Gemini Pro — the default is `gemini-2.5-pro`. To trade cost for speed set
-`GEMINI_CHAT_MODEL=gemini-2.5-flash` (or `gemini-2.0-flash`). To make Gemini the primary model:
+Gemini is the primary provider out of the box — just set the key. Text features use
+`gemini-2.5-pro`; to trade quality for cost everywhere set `GEMINI_CHAT_MODEL=gemini-2.5-flash`
+(voice + Live already use Flash via `LIVE_CHAT_MODEL`).
 
 ```env
 GEMINI_API_KEY=your-key
-DEFAULT_LLM_PROVIDER=gemini
+# DEFAULT_LLM_PROVIDER=gemini      (already the default)
+# GEMINI_CHAT_MODEL=gemini-2.5-pro
+# LIVE_CHAT_MODEL=gemini-2.5-flash
 ```
 
 Get a key at <https://aistudio.google.com/apikey>. VAYU talks to Gemini through its

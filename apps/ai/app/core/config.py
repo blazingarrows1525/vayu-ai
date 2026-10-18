@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     log_level: str = "info"
     # Security — per-client requests/min on /v1/* (fail-open if Redis is down).
     rate_limit_per_min: int = 120
+    # VAYU Live: model turns per user per minute over the WebSocket (each turn costs tokens).
+    live_turns_per_min: int = 20
 
     # Data tier (shared with the product plane)
     database_url: str = "postgresql://vayu:vayu@localhost:5432/vayu"
@@ -43,9 +45,11 @@ class Settings(BaseSettings):
     nvidia_embed_api_key: str | None = None
     nvidia_safety_api_key: str | None = None
     nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
-    # Which provider to prefer; failover walks the rest in order if it's unconfigured.
-    default_llm_provider: str = "anthropic"
-    default_chat_model: str = "claude-sonnet-4-6"
+    # Which provider to prefer; failover walks the rest (cheapest first) if it's unconfigured.
+    default_llm_provider: str = "gemini"
+    default_chat_model: str = "claude-sonnet-4-6"  # the Anthropic model, when Anthropic is used
+    # Voice / VAYU Live replies are short and latency-bound: a fast, cheap Gemini model.
+    live_chat_model: str = "gemini-2.5-flash"
     # Per-provider default models (used when a request doesn't pin one).
     openai_chat_model: str = "gpt-4o-mini"
     gemini_chat_model: str = "gemini-2.5-pro"
