@@ -25,6 +25,25 @@ function resolveBaseURL(): string {
   return "http://localhost:3000";
 }
 
+// Every origin the app is served from. Better Auth rejects sign-in POSTs whose Origin isn't
+// trusted ("Invalid origin", 403) — e.g. when BETTER_AUTH_URL names a different Render host.
+function trustedOrigins(): string[] {
+  const origins = new Set<string>();
+  for (const candidate of [
+    process.env.BETTER_AUTH_URL,
+    process.env.RENDER_EXTERNAL_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+  ]) {
+    if (!candidate) continue;
+    try {
+      origins.add(new URL(candidate).origin);
+    } catch {
+      // skip malformed values
+    }
+  }
+  return [...origins];
+}
+
 /**
  * Better Auth — the product plane's identity authority.
  *
@@ -36,6 +55,7 @@ function resolveBaseURL(): string {
  */
 export const auth = betterAuth({
   baseURL: resolveBaseURL(),
+  trustedOrigins: trustedOrigins(),
   secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -48,6 +68,10 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
+  },
+  // Same email via Google and GitHub → one user, instead of an "account_not_linked" error.
+  account: {
+    accountLinking: { enabled: true, trustedProviders: ["google", "github"] },
   },
   socialProviders: {
     ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET

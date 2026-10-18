@@ -66,7 +66,30 @@ uv --directory apps/ai run alembic upgrade head  # AI tables + pgvector/HNSW
 | `VECTOR_STORE`, `QDRANT_*`, `CHROMA_URL`, `PINECONE_*` | ai | vector store (default `pgvector`) — [PROVIDERS.md](PROVIDERS.md) |
 | `S3_*`, `MAX_UPLOAD_MB` | ai | object storage (opt-in) + upload cap — [AWS_S3_SETUP.md](AWS_S3_SETUP.md) |
 | `SENTRY_DSN`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME` | both | observability (optional) |
-| `GITHUB_*`, `GOOGLE_*` | web | optional OAuth |
+| `GITHUB_*`, `GOOGLE_*` | web | optional OAuth (email + password always works) |
+
+## Social login (Google / GitHub)
+
+A provider's button appears only when **both** its `*_CLIENT_ID` and `*_CLIENT_SECRET` are set
+on `vayu-web`. Register these exact callback URLs with the provider (use your real origin):
+
+- Google Cloud Console → Credentials → OAuth client → *Authorized redirect URIs*:
+  `https://<vayu-web host>/api/auth/callback/google`
+- GitHub → Settings → Developer settings → OAuth Apps → *Authorization callback URL*:
+  `https://<vayu-web host>/api/auth/callback/github`
+
+`BETTER_AUTH_URL` must be that same origin — it is what the app sends as `redirect_uri`. A
+failed callback now returns to `/login` with a readable reason:
+
+| Message on `/login` | Usual cause |
+|---|---|
+| Provider page says *redirect_uri mismatch* | callback URL above not registered, or `BETTER_AUTH_URL` is a different host |
+| "session expired or was opened in another tab" (`state_mismatch`) | sign-in started on one host and finished on another — align `BETTER_AUTH_URL` with the URL you browse |
+| "provider rejected the sign-in code" (`invalid_code`) | wrong client secret, or a Google app still in *Testing* with you not listed as a test user |
+| "no email we can use" (`email_not_found`) | GitHub account with no verified email |
+
+Changing `BETTER_AUTH_SECRET` invalidates the stored JWT signing key ("Failed to decrypt private
+key" in the logs; `/live` and AI features fail). Keep it stable, or delete the rows in `jwks`.
 
 ## The JWT/JWKS bridge in production
 

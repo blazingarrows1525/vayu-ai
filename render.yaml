@@ -102,3 +102,13 @@ services:
         sync: false # → https://<vayu-web hostname>
       - key: NEXT_PUBLIC_APP_URL
         sync: false # → https://<vayu-web hostname>
+      # Optional social login: set BOTH id + secret for a provider to show its button.
+      # Callback URLs to register: https://<vayu-web hostname>/api/auth/callback/{google,github}
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false

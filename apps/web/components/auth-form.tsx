@@ -6,6 +6,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { motion } from "framer-motion";
 
+const INPUT =
+  "w-full px-4 py-3 text-sm text-white placeholder:text-vayu-muted rounded-xl bg-white/5 border border-white/10 outline-none focus:border-vayu-accent/60 focus:bg-white/[0.07] transition-colors";
+
 interface SocialProviders {
   google: boolean;
   github: boolean;
@@ -18,21 +21,46 @@ const LoadingSpinner = () => (
   </svg>
 );
 
+// Better Auth redirects a failed OAuth callback to errorCallbackURL with ?error=<code>.
+const OAUTH_ERRORS: Record<string, string> = {
+  state_mismatch: "Your sign-in session expired or was opened in another tab. Please try again.",
+  please_restart_the_process: "Your sign-in session expired. Please try again.",
+  invalid_code: "The provider rejected the sign-in code. Please try again.",
+  unable_to_get_user_info: "We couldn't read your profile from the provider.",
+  email_not_found: "Your provider account has no email we can use. Make one public or verified and retry.",
+  account_not_linked: "That email already belongs to an account that uses a different sign-in method.",
+  unable_to_link_account: "We couldn't link this provider to your existing account.",
+  internal_server_error: "Sign-in failed on our side. Please try again in a moment.",
+};
+
+function describeOAuthError(code: string): string {
+  return OAUTH_ERRORS[code] ?? `Sign-in failed (${code.replace(/_/g, " ")}). Please try again.`;
+}
+
 export function AuthForm() {
   const router = useRouter();
   const params = useSearchParams();
   const redirectParam = params.get("redirect");
   const target = (
-    redirectParam?.startsWith("/") ? redirectParam : "/dashboard"
+    redirectParam?.startsWith("/") && !redirectParam.startsWith("//") ? redirectParam : "/dashboard"
   ) as Route;
+  const callbackError = params.get("error");
 
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    callbackError ? describeOAuthError(callbackError) : null,
+  );
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const [providers, setProviders] = useState<SocialProviders>({
     google: false,
     github: false,
   });
   const [loaded, setLoaded] = useState(false);
+  const [mode, setMode] = useState<"signin" | "signup">(
+    params.get("mode") === "signup" ? "signup" : "signin",
+  );
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   // Show a provider button only when its credentials are configured on the server.
   // (A hard-coded "always show both" broke live sign-in: Google isn't configured on
@@ -48,12 +76,44 @@ export function AuthForm() {
   async function onSocial(provider: "google" | "github") {
     setError(null);
     setLoadingProvider(provider);
+    const errorCallbackURL = `/login?redirect=${encodeURIComponent(target)}`;
     try {
-      await authClient.signIn.social({ provider, callbackURL: target });
+      // Better Auth reports failures as { error } rather than throwing — on success the
+      // browser is already navigating to the provider, so leave the spinner running.
+      const { error: err } = await authClient.signIn.social({
+        provider,
+        callbackURL: target,
+        errorCallbackURL,
+      });
+      if (err) {
+        setError(err.message || `Couldn't start ${provider} sign-in (${err.status}).`);
+        setLoadingProvider(null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Social sign-in failed");
       setLoadingProvider(null);
     }
+  }
+
+  async function onEmail(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setLoadingProvider("email");
+    const { error: err } =
+      mode === "signin"
+        ? await authClient.signIn.email({ email, password })
+        : await authClient.signUp.email({
+            email,
+            password,
+            name: name.trim() || email.split("@")[0] || "VAYU user",
+          });
+    if (err) {
+      setError(err.message || "Sign-in failed. Check your email and password.");
+      setLoadingProvider(null);
+      return;
+    }
+    router.push(target);
+    router.refresh();
   }
 
   const hasSocial = providers.google || providers.github;
@@ -100,17 +160,73 @@ export function AuthForm() {
             </motion.button>
           )}
         </div>
-      ) : loaded ? (
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          className="text-sm text-center text-vayu-muted p-4 border border-white/5 rounded-xl bg-white/5 backdrop-blur-sm"
-        >
-          Authentication providers are currently being configured.
-        </motion.div>
-      ) : (
+      ) : loaded ? null : (
         <div className="h-[104px] animate-pulse rounded-xl bg-white/5" aria-hidden />
       )}
-      
+
+      {hasSocial && (
+        <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-vayu-muted">
+          <span className="h-px flex-1 bg-white/10" />
+          or with email
+          <span className="h-px flex-1 bg-white/10" />
+        </div>
+      )}
+
+      <form onSubmit={onEmail} className="flex flex-col gap-3">
+        {mode === "signup" && (
+          <input
+            type="text"
+            autoComplete="name"
+            placeholder="Name"
+            aria-label="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className={INPUT}
+          />
+        )}
+        <input
+          type="email"
+          required
+          autoComplete="email"
+          placeholder="Email"
+          aria-label="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={INPUT}
+        />
+        <input
+          type="password"
+          required
+          minLength={8}
+          autoComplete={mode === "signin" ? "current-password" : "new-password"}
+          placeholder="Password (8+ characters)"
+          aria-label="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className={INPUT}
+        />
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          type="submit"
+          disabled={loadingProvider !== null}
+          className="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-semibold text-black rounded-xl bg-vayu-accent hover:shadow-[0_8px_30px_rgba(56,189,248,0.25)] disabled:opacity-70"
+        >
+          {loadingProvider === "email" && <LoadingSpinner />}
+          {mode === "signin" ? "Sign in" : "Create account"}
+        </motion.button>
+        <button
+          type="button"
+          onClick={() => {
+            setMode(mode === "signin" ? "signup" : "signin");
+            setError(null);
+          }}
+          className="text-xs text-vayu-muted hover:text-white transition-colors"
+        >
+          {mode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}
+        </button>
+      </form>
+
       <p className="mt-6 text-xs text-center text-vayu-muted opacity-80">
         By continuing, you agree to our{" "}
         <a href="/terms" className="underline hover:text-white transition-colors">Terms of Service</a>{" "}

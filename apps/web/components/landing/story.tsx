@@ -120,7 +120,9 @@ export function Story() {
       gsap.registerPlugin(ScrollTrigger);
 
       const q = gsap.utils.selector(wrap.current);
-      const scenes = q<HTMLElement>("[data-scene]");
+      // Each scene is a copy block + (desktop) visual sharing data-scene={i}; animate the
+      // pair together so text and visual never take turns.
+      const scenes = SCENES.map((_, i) => q<HTMLElement>(`[data-scene="${i}"]`));
       const dots = q<HTMLElement>("[data-dot]");
 
       const tl = gsap.timeline({
@@ -138,8 +140,8 @@ export function Story() {
         if (i > 0) {
           tl.fromTo(
             scene,
-            { autoAlpha: 0, y: 60, scale: 0.96, filter: "blur(8px)" },
-            { autoAlpha: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.7 },
+            { autoAlpha: 0, y: 60, scale: 0.96 },
+            { autoAlpha: 1, y: 0, scale: 1, duration: 0.7 },
             at,
           );
         } else {
@@ -148,7 +150,7 @@ export function Story() {
         if (i < scenes.length - 1) {
           tl.to(
             scene,
-            { autoAlpha: 0, y: -60, scale: 0.96, filter: "blur(8px)", duration: 0.7 },
+            { autoAlpha: 0, y: -60, scale: 0.96, duration: 0.7 },
             at + 1.3,
           );
         }
@@ -164,8 +166,23 @@ export function Story() {
       tl.fromTo(q("[data-cite-chip]"), { y: 14, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.3, stagger: 0.1 }, 2.15);
       tl.fromTo(q("[data-confidence-bar]"), { scaleX: 0, transformOrigin: "0 50%" }, { scaleX: 1, duration: 0.6 }, 2.5);
       tl.fromTo(q("[data-agent-node]"), { x: -18, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 0.3, stagger: 0.14 }, 4.15);
+      // Hold the last scene for a full slot so the three scenes share the scroll evenly.
+      tl.to({}, { duration: 0.01 }, SCENES.length * 2 - 0.01);
+
+      // Trigger offsets are measured once; webfonts and the lazy hero canvas change the
+      // page height afterwards, which left the scrub mapped to the wrong scroll range.
+      let raf = 0;
+      const refresh = () => {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => ScrollTrigger.refresh());
+      };
+      const ro = new ResizeObserver(refresh);
+      ro.observe(document.body);
+      void document.fonts?.ready.then(refresh);
 
       cleanup = () => {
+        cancelAnimationFrame(raf);
+        ro.disconnect();
         tl.scrollTrigger?.kill();
         tl.kill();
       };
@@ -186,7 +203,7 @@ export function Story() {
           {/* copy stack — scenes are absolutely layered */}
           <div className="relative min-h-[300px]">
             {SCENES.map((s, i) => (
-              <div key={s.n} data-scene className="absolute inset-0 opacity-0">
+              <div key={s.n} data-scene={i} className="absolute inset-0 opacity-0">
                 <p className="font-mono text-sm" style={{ color: s.accent }}>{s.n}</p>
                 <h3 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">{s.title}</h3>
                 <p className="mt-4 max-w-md text-lg leading-relaxed text-vayu-muted">{s.copy}</p>
@@ -199,7 +216,7 @@ export function Story() {
           {/* visual stack (desktop) */}
           <div className="relative hidden min-h-[340px] lg:block">
             {SCENES.map((s, i) => (
-              <div key={s.n} data-scene className="glass absolute inset-0 rounded-3xl opacity-0 shadow-lift">
+              <div key={s.n} data-scene={i} className="glass absolute inset-0 rounded-3xl opacity-0 shadow-lift">
                 <SceneVisual index={i} />
               </div>
             ))}
