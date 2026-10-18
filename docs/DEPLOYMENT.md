@@ -57,9 +57,11 @@ uv --directory apps/ai run alembic upgrade head  # AI tables + pgvector/HNSW
 | `REDIS_URL` | both | cache / rate-limit / idempotency |
 | `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` | web | auth signing + base URL |
 | `AI_SERVICE_URL` | web | server-to-server URL of the AI plane |
+| `AI_PUBLIC_URL` | web | URL the **browser** uses for the VAYU Live WebSocket (`/v1/ws/chat`); defaults to `AI_SERVICE_URL` — set it only when that is an internal hostname (e.g. compose's `http://ai:8787`) |
 | `AUTH_JWKS_URL`, `AUTH_JWT_ISSUER`, `AUTH_JWT_AUDIENCE` | ai | verify Better Auth JWTs (`…/api/auth/jwks`) |
-| `ANTHROPIC_API_KEY` | ai | copilot / agents / RAG grounding |
-| `GEMINI_API_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY` | ai | extra LLM providers (cross-provider fallback) — [PROVIDERS.md](PROVIDERS.md) |
+| `GEMINI_API_KEY` | ai | the default LLM (copilot / agents / RAG / voice / Live) — [PROVIDERS.md](PROVIDERS.md) |
+| `ANTHROPIC_API_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `NVIDIA_API_KEY` | ai | extra LLM providers (cheapest-first fallback) — [PROVIDERS.md](PROVIDERS.md) |
+| `LIVE_CHAT_MODEL`, `LIVE_TURNS_PER_MIN` | ai | VAYU Live / voice model (default `gemini-2.5-flash`) and per-user turn limit (default 20/min) |
 | `VOYAGE_API_KEY` / `OPENAI_API_KEY` | ai | embeddings — Voyage `voyage-3` (default) or OpenAI |
 | `VECTOR_STORE`, `QDRANT_*`, `CHROMA_URL`, `PINECONE_*` | ai | vector store (default `pgvector`) — [PROVIDERS.md](PROVIDERS.md) |
 | `S3_*`, `MAX_UPLOAD_MB` | ai | object storage (opt-in) + upload cap — [AWS_S3_SETUP.md](AWS_S3_SETUP.md) |

@@ -33,3 +33,4 @@ the big picture and resume guide.
 | 25 | Multi-provider LLMs, vector stores, OAuth, S3 | [phase-25-providers-auth-storage.md](phase-25-providers-auth-storage.md) | ✅ |
 | 26 | Cinematic 3D web experience | [phase-26-web-experience.md](phase-26-web-experience.md) | ✅ |
 | 27 | Multimodal & agent hardening (+ July NVIDIA/voice/video/ReAct work) | [phase-27-hardening.md](phase-27-hardening.md) | ✅ |
+| 28 | VAYU Live (realtime WebSocket UI, 3D voice core) + Gemini-first | [phase-28-live.md](phase-28-live.md) | ✅ |

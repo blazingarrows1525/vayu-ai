@@ -36,10 +36,24 @@ test("session survives a reload (cookie persists)", async ({ page }) => {
   await expect(page).toHaveURL(/\/dashboard/);
 });
 
-test("authenticated user can open the research center", async ({ page }) => {
+// Better Auth allows 3 sign-ups per 10s per IP in production mode — keep this file at
+// three signUp() calls (add assertions to an existing journey rather than a 4th signup).
+test("authenticated user can open the research center and VAYU Live", async ({ page }) => {
   await signUp(page);
   await page.goto("/research");
   await expect(
     page.getByRole("heading", { name: /research center/i }),
   ).toBeVisible();
+
+  // VAYU Live: the BFF mints a short-lived JWT + the AI plane's WebSocket URL.
+  const res = await page.request.get("/api/realtime/session");
+  expect(res.ok()).toBeTruthy();
+  const { url, token } = (await res.json()) as { url: string; token: string };
+  expect(url).toMatch(/^wss?:\/\/.+\/v1\/ws\/chat$/);
+  expect(token.split(".")).toHaveLength(3);
+
+  await page.goto("/live");
+  await expect(page.getByRole("heading", { name: "Live" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Message VAYU" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Talk to VAYU" })).toBeVisible();
 });

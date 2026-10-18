@@ -27,6 +27,7 @@ export const config = {
     "/settings/:path*",
     "/analytics/:path*",
     "/voice/:path*",
+    "/live/:path*",
     "/media/:path*",
   ],
 };

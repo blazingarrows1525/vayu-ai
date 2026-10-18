@@ -189,6 +189,9 @@ body::after {
   transform: translateY(-2px);
 }
 
+/* Working surfaces (transcripts, composers) keep the glow but don't lift on hover. */
+.glass-panel.glass-static:hover { transform: none; }
+
 /* Animated gradient edge for hero-grade panels. */
 .edge-flow {
   position: relative;

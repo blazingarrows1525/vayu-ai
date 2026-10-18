@@ -28,16 +28,17 @@ Browser ─▶ Next.js 16 (UI + BFF) ──Drizzle──▶ ┌ Postgres + pgvec
 Design docs: **[`docs/architecture`](docs/architecture/README.md)**. Build reasoning + resume
 guide: **[`docs/LOGIC.md`](docs/LOGIC.md)**. Per-phase log: **[`docs/build-log`](docs/build-log/README.md)**.
 
-## Features (27 build phases — see [`docs/build-log`](docs/build-log/README.md))
+## Features (28 build phases — see [`docs/build-log`](docs/build-log/README.md))
 
 | Module | Surface | Highlights |
 |---|---|---|
 | Auth & RBAC | `/login` `/signup` `/dashboard` | Better Auth, JWT+JWKS bridge, workspace roles (owner→viewer) |
 | Editor | `/editor`, `/docs/[id]` | Tiptap: slash menu, tables, code, **math (KaTeX)**, **Mermaid**, callouts, task lists |
-| AI Copilot | editor panel · `/api/ai/copilot` | Streaming, multi-provider (Anthropic · OpenAI · NVIDIA · Gemini · Groq · OpenRouter) with failover, 12 commands, usage ledger, idempotency |
+| AI Copilot | editor panel · `/api/ai/copilot` | Streaming, Gemini-first multi-provider (Gemini · Groq · NVIDIA · OpenAI · OpenRouter · Anthropic) with cheapest-first failover, 12 commands, usage ledger, idempotency |
 | Research / RAG | `/research` | upload → chunk → embed (pgvector) → grounded answers + citations + confidence |
 | Agents | `/agents` | 7 LangGraph agents — ReAct tool-calling loop (Wikipedia, calculator), step trace, SSE streaming |
-| Voice & Video | `/voice` `/media` | push-to-talk assistant (STT → safety → LLM → TTS), video summaries (keyframes + transcript); both feed RAG |
+| VAYU Live | `/live` | realtime voice + text over a WebSocket — streaming replies, spoken answers, barge-in, and an audio-reactive 3D voice core |
+| Voice & Video | `/voice` `/media` | push-to-talk assistant (STT → safety → LLM → TTS), video summaries (keyframes + transcript) feed RAG |
 | Knowledge Vault | `/vault` | semantic search, related-content (graph edges), saved searches |
 | Collaboration | `/docs` `/settings/members` | documents, threaded comments + mentions, member/role management |
 | Versioning + Analytics | doc History · `/analytics` | snapshots/restore/timeline; words, reading time, AI usage |
@@ -72,9 +73,8 @@ pnpm dev        # web  → http://localhost:3000
 pnpm ai:dev     # API  → http://localhost:8787  (/docs)
 ```
 
-**Keys** (optional — features degrade gracefully without them): any one LLM key —
-`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `NVIDIA_API_KEY`, … — for copilot,
-agents and RAG grounding; an embeddings key for RAG (`EMBEDDING_PROVIDER`: NVIDIA in
+**Keys** (optional — features degrade gracefully without them): `GEMINI_API_KEY` (the default
+LLM — copilot, agents, RAG grounding, voice, Live; any other provider key also works); an embeddings key for RAG (`EMBEDDING_PROVIDER`: NVIDIA in
 `.env.example`, or OpenAI / Voyage); `NVIDIA_API_KEY` for voice STT + video, `OPENAI_API_KEY`
 for spoken replies. Full reference: [`docs/PROVIDERS.md`](docs/PROVIDERS.md).
 

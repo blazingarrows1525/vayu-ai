@@ -70,6 +70,13 @@ const I = {
       <line x1="17" y1="7" x2="22" y2="7" />
     </svg>
   ),
+  live: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4" />
+      <path d="M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2" />
+    </svg>
+  ),
   voice: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
@@ -85,6 +92,7 @@ const ITEMS: Item[] = [
   { href: "/docs", label: "Docs", icon: I.docs },
   { href: "/research", label: "Research", icon: I.research, accent: "violet" },
   { href: "/agents", label: "Agents", icon: I.agents, accent: "violet" },
+  { href: "/live", label: "Live", icon: I.live, accent: "violet" },
   { href: "/voice", label: "Voice", icon: I.voice, accent: "accent" },
   { href: "/media", label: "Media", icon: I.media },
   { href: "/vault", label: "Vault", icon: I.vault },
@@ -100,9 +108,9 @@ export function FloatingDock() {
   return (
     <nav
       aria-label="VAYU navigation"
-      className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2"
+      className="fixed bottom-5 left-1/2 z-50 max-w-[calc(100vw-1rem)] -translate-x-1/2"
     >
-      <ul className="glass-panel glow-soft flex items-end gap-1.5 rounded-2xl px-2.5 py-2">
+      <ul className="glass-panel glow-soft flex items-end gap-1.5 rounded-2xl px-2.5 py-2 max-sm:gap-1 max-sm:overflow-x-auto max-sm:pt-3 max-sm:[scrollbar-width:none]">
         {ITEMS.map((item, i) => {
           const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
           const ring =
@@ -110,7 +118,7 @@ export function FloatingDock() {
               ? "group-hover:shadow-[0_0_26px_-4px_var(--color-vayu-violet)] group-hover:text-vayu-violet"
               : "group-hover:shadow-[0_0_26px_-4px_var(--color-vayu-accent)] group-hover:text-vayu-accent";
           return (
-            <li key={item.href} className="animate-float" style={{ animationDelay: `${i * 0.35}s` }}>
+            <li key={item.href} className="shrink-0 animate-float" style={{ animationDelay: `${i * 0.35}s` }}>
               <Link
                 href={item.href as never}
                 aria-label={item.label}
@@ -121,7 +129,7 @@ export function FloatingDock() {
                   {item.label}
                 </span>
                 <span
-                  className={`grid h-11 w-11 place-items-center rounded-xl border transition-all duration-300 ease-out group-hover:-translate-y-1.5 group-hover:scale-110 ${ring} ${
+                  className={`grid h-10 w-10 place-items-center sm:h-11 sm:w-11 rounded-xl border transition-all duration-300 ease-out group-hover:-translate-y-1.5 group-hover:scale-110 ${ring} ${
                     active
                       ? "border-vayu-accent/60 bg-vayu-accent/15 text-vayu-accent"
                       : "border-vayu-border bg-vayu-bg/50 text-vayu-muted"

@@ -52,5 +52,7 @@ services:
       BETTER_AUTH_URL: http://localhost:3000
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       AI_SERVICE_URL: http://ai:8787
+      # What the *browser* uses to reach the AI plane (VAYU Live WebSocket)
+      AI_PUBLIC_URL: ${AI_PUBLIC_URL:-http://localhost:8787}
     ports:
       - "3000:3000"

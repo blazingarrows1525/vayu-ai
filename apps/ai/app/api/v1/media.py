@@ -1,7 +1,8 @@
 """Media API (Voice & Video).
 
 Both endpoints act inside the caller's workspace (from the verified JWT, never
-from form data) and feed their transcript / summary into that workspace's RAG.
+from form data). Video summaries and voice *transcriptions* feed that workspace's
+RAG; voice *chat* turns are conversational and are not stored.
 """
 
 import base64
@@ -15,7 +16,7 @@ from app.core.config import Settings, get_settings
 from app.core.security import Principal, get_principal, require_workspace
 from app.db.base import get_session
 from app.rag.pipeline import ingest_document
-from app.services.llm import LLMError, LLMUnavailable, generate
+from app.services.llm import LLMError, LLMUnavailable, generate, live_llm_kwargs
 from app.services.safety import SafetyService
 from app.services.video import VideoProcessingError, VideoService
 from app.services.voice import VoiceService
@@ -79,8 +80,8 @@ async def process_voice(
     except Exception as exc:  # noqa: BLE001 - logged in the service
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Transcription failed.") from exc
 
-    # Ingest the transcript into RAG
-    if transcript.strip():
+    # Ingest dictated transcripts into RAG (chat questions are not knowledge)
+    if action == "transcribe" and transcript.strip():
         await ingest_document(
             session, settings,
             workspace_id=workspace_id,
@@ -107,7 +108,9 @@ async def process_voice(
 
         # Generate response
         try:
-            resp, _ = await generate(settings, system=_VOICE_SYSTEM, prompt=transcript)
+            resp, _ = await generate(
+                settings, system=_VOICE_SYSTEM, prompt=transcript, **live_llm_kwargs(settings)
+            )
         except LLMUnavailable as exc:
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
         except LLMError as exc:

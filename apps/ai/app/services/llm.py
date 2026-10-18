@@ -444,8 +444,9 @@ class OpenAICompatibleProvider:
         )
 
 
-# Preference order for failover when the requested/default provider isn't configured.
-PROVIDER_ORDER = ["anthropic", "openai", "nvidia", "gemini", "groq", "openrouter"]
+# Failover order when the requested/default provider isn't configured — cheapest first,
+# so a missing or failing Gemini key never silently escalates to the priciest provider.
+PROVIDER_ORDER = ["gemini", "groq", "nvidia", "openai", "openrouter", "anthropic"]
 
 
 def build_provider(name: str, settings: Settings) -> LLMProvider:
@@ -534,6 +535,14 @@ def _resolve_chain(settings: Settings, preferred: str | None = None) -> list[LLM
         if provider.available:
             chain.append(provider)
     return chain
+
+
+def live_llm_kwargs(settings: Settings) -> dict:
+    """Routing for latency-bound voice replies: the fast Gemini model when Gemini is
+    configured, else the normal default chain (a Gemini id is never sent elsewhere)."""
+    if settings.gemini_api_key:
+        return {"preferred": "gemini", "model": settings.live_chat_model}
+    return {}
 
 
 async def generate(

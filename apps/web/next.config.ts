@@ -18,7 +18,11 @@ const nextConfig: NextConfig = {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https:",
+      // Voice replies play from data:/blob: audio.
+      "media-src 'self' data: blob:",
+      // `https:` does not cover `wss:` — VAYU Live opens a WebSocket to the AI plane
+      // (wss: in prod, ws://localhost:* for local / compose runs).
+      "connect-src 'self' https: wss: ws://localhost:*",
       "frame-ancestors 'self'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -33,7 +37,8 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
+            // Our own pages need the mic (voice assistant, VAYU Live); embeds don't.
+            value: "camera=(), microphone=(self), geolocation=()",
           },
           {
             key: "Strict-Transport-Security",

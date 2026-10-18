@@ -22,9 +22,11 @@ const COMMANDS: { value: string; label: string }[] = [
 // No `model` lets the AI plane use that provider's configured model; no `provider`
 // lets it use the workspace default (with failover).
 type ModelChoice = { id: string; label: string; provider?: string; model?: string };
-const DEFAULT_MODEL: ModelChoice = { id: "default", label: "Workspace default" };
+const DEFAULT_MODEL: ModelChoice = { id: "default", label: "Workspace default (Gemini)" };
 const MODELS: ModelChoice[] = [
   DEFAULT_MODEL,
+  { id: "gemini-flash", label: "Gemini 2.5 Flash — fast", provider: "gemini", model: "gemini-2.5-flash" },
+  { id: "gemini-pro", label: "Gemini 2.5 Pro", provider: "gemini", model: "gemini-2.5-pro" },
   { id: "nvidia-405b", label: "NVIDIA Llama 3.1 405B", provider: "nvidia", model: "meta/llama-3.1-405b-instruct" },
   { id: "nvidia-70b", label: "NVIDIA Llama 3.1 70B", provider: "nvidia", model: "meta/llama-3.1-70b-instruct" },
   { id: "nvidia-8b", label: "NVIDIA Llama 3.1 8B", provider: "nvidia", model: "meta/llama-3.1-8b-instruct" },
