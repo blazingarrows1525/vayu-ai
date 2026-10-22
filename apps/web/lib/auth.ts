@@ -56,6 +56,9 @@ function trustedOrigins(): string[] {
 export const auth = betterAuth({
   baseURL: resolveBaseURL(),
   trustedOrigins: trustedOrigins(),
+  // Unhandled sign-in failures (e.g. a DB error mid-callback) otherwise bounce to "/" with an
+  // ?error= the home page ignores — the user just sees "Sign in" again with no reason.
+  onAPIError: { errorURL: "/login" },
   secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, {
     provider: "pg",
