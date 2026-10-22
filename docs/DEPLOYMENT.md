@@ -44,6 +44,11 @@ Without those secrets the `deploy` job is a no-op, so CI stays green whether or 
 
 ## Migrations
 
+Applied **automatically on every deploy**: the web server runs the Drizzle migrations at
+startup (`apps/web/instrumentation.ts` → `@vayu/db/migrate`), and the AI container runs
+`alembic upgrade head` before uvicorn. Both are idempotent; look for `[migrate]` lines in
+the service logs. To run them by hand:
+
 ```bash
 pnpm db:migrate                                  # product tables (Drizzle)
 uv --directory apps/ai run alembic upgrade head  # AI tables + pgvector/HNSW

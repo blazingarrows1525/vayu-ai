@@ -33,6 +33,9 @@ ENV NODE_ENV=production
 # Next standalone output mirrors the monorepo layout under .next/standalone.
 COPY --from=build /app/apps/web/.next/standalone ./
 COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
+# SQL migrations, applied at server start by instrumentation.ts.
+COPY --from=build /app/packages/db/drizzle ./packages/db/drizzle
+ENV DRIZZLE_MIGRATIONS_DIR=/app/packages/db/drizzle
 EXPOSE 3000
 # Next standalone binds to $HOSTNAME. Render/K8s set HOSTNAME to the pod name, which
 # makes the server bind to an unreachable interface (→ 502). Force 0.0.0.0 at the

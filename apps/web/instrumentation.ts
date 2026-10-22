@@ -11,4 +11,11 @@ export async function register() {
     const Sentry = await import("@sentry/node");
     Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0.1 });
   }
+
+  // Apply DB migrations before serving (Node only — the import must sit inside this check
+  // so the Edge build drops it).
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { migrateDatabase } = await import("./lib/migrate-on-boot");
+    await migrateDatabase();
+  }
 }
