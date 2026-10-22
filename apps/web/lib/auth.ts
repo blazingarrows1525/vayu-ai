@@ -87,6 +87,11 @@ export const auth = betterAuth({
           google: {
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            // Always show the account chooser (so a signed-in Google user can pick which
+            // account), and request offline access so Google returns a refresh token —
+            // without it, re-auth is forced once the access token lapses.
+            accessType: "offline",
+            prompt: "select_account consent",
           },
         }
       : {}),
