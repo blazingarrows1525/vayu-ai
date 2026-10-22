@@ -69,9 +69,13 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
   },
-  // Same email via Google and GitHub → one user, instead of an "account_not_linked" error.
   account: {
+    // Same email via Google and GitHub → one user, instead of an "account_not_linked" error.
     accountLinking: { enabled: true, trustedProviders: ["google", "github"] },
+    // Carry the OAuth state/PKCE in an encrypted cookie instead of a `verification` row.
+    // The DB-backed default 500s ("Unable to create verification") if that table is missing
+    // or unreachable, which blocks every social sign-in; the cookie is stateless and signed.
+    storeStateStrategy: "cookie",
   },
   socialProviders: {
     ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
