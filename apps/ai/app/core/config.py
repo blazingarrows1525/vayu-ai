@@ -62,11 +62,18 @@ class Settings(BaseSettings):
     nvidia_voice_model: str = "nvidia/parakeet-rnnt-1.1b"
     nvidia_video_model: str = "meta/llama-3.2-90b-vision-instruct"
     nvidia_safety_model: str | None = None
+    # Gemini also covers speech-to-text, video understanding, text-to-speech and embeddings, so
+    # a single GEMINI_API_KEY lights up every feature.
+    gemini_media_model: str = "gemini-2.5-flash"
+    gemini_tts_model: str = "gemini-2.5-flash-preview-tts"
+    gemini_tts_voice: str = "Kore"
+    gemini_embed_model: str = "gemini-embedding-001"
     # Transient-error retries per LLM call (429 / 5xx / timeouts) — the SDK clients back off.
     llm_max_retries: int = 2
 
     # Embeddings
-    embedding_provider: str = "openai"  # openai | voyage
+    # openai | voyage | nvidia | gemini — if the chosen one has no key, Gemini is used when set.
+    embedding_provider: str = "openai"
     embedding_model: str = "text-embedding-3-small"
     embedding_dim: int = 1536
     voyage_api_key: str | None = None

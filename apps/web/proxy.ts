@@ -29,5 +29,6 @@ export const config = {
     "/voice/:path*",
     "/live/:path*",
     "/media/:path*",
+    "/status/:path*",
   ],
 };

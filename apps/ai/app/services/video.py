@@ -10,6 +10,7 @@ import structlog
 from openai import AsyncOpenAI
 
 from app.core.config import Settings
+from app.services import gemini
 from app.services.ffmpeg import run_ffmpeg, safe_upload_path
 from app.services.voice import VoiceService
 
@@ -28,7 +29,24 @@ class VideoService:
 
     @property
     def available(self) -> bool:
-        return bool(self._settings.nvidia_api_key)
+        return self.provider is not None
+
+    @property
+    def provider(self) -> str | None:
+        """Vision model provider: NVIDIA when configured, else Gemini."""
+        if self._settings.nvidia_api_key:
+            return "nvidia"
+        if self._settings.gemini_api_key:
+            return "gemini"
+        return None
+
+    def _vision(self) -> tuple[AsyncOpenAI, str]:
+        if self.provider == "nvidia":
+            client = AsyncOpenAI(
+                api_key=self._settings.nvidia_api_key, base_url=self._settings.nvidia_base_url
+            )
+            return client, self._settings.nvidia_video_model
+        return gemini.openai_client(self._settings), self._settings.gemini_media_model
 
     async def summarize_video(
         self,
@@ -90,14 +108,14 @@ class VideoService:
             messages: list[dict] = [{"role": "user", "content": content}]
 
             try:
-                client = AsyncOpenAI(api_key=self._settings.nvidia_api_key, base_url=self._settings.nvidia_base_url)
+                client, model = self._vision()
                 resp = await client.chat.completions.create(
-                    model=self._settings.nvidia_video_model,
+                    model=model,
                     messages=messages, # type: ignore
                     max_tokens=1024
                 )
             except Exception as e:
-                log.error("video_summarization_failed", error=str(e))
+                log.error("video_summarization_failed", provider=self.provider, error=str(e))
                 raise VideoProcessingError("The vision model could not summarize this video.") from e
             summary = resp.choices[0].message.content or ""
             if not summary.strip():

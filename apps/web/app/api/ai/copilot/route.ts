@@ -1,5 +1,5 @@
 import { aiGeneration, db } from "@vayu/db";
-import { getServiceToken } from "@/lib/ai";
+import { aiFailureMessage, getServiceToken } from "@/lib/ai";
 import { checkPermission } from "@/lib/session";
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL ?? "http://localhost:8787";
@@ -20,14 +20,22 @@ export async function POST(req: Request) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const upstream = await fetch(`${AI_SERVICE_URL}/v1/copilot`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(`${AI_SERVICE_URL}/v1/copilot`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return Response.json({ error: aiFailureMessage(null) }, { status: 502 });
+  }
   if (!upstream.ok || !upstream.body) {
     return Response.json(
-      { error: "intelligence plane error", status: upstream.status },
+      {
+        error: aiFailureMessage(upstream.status) ?? "intelligence plane error",
+        status: upstream.status,
+      },
       { status: 502 },
     );
   }

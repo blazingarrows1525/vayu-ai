@@ -49,16 +49,28 @@ Get a key at <https://aistudio.google.com/apikey>. VAYU talks to Gemini through 
 OpenAI-compatible endpoint (`https://generativelanguage.googleapis.com/v1beta/openai/`), so the
 same streaming / structured-output / retry paths apply.
 
+**One Gemini key runs every feature.** When it's the only key set, Gemini also handles:
+
+| Feature | Model (env) | Used when |
+|---|---|---|
+| Speech-to-text (voice, Live, video audio) | `gemini-2.5-flash` (`GEMINI_MEDIA_MODEL`) | no NVIDIA / OpenAI key |
+| Video understanding (frames + transcript) | `gemini-2.5-flash` (`GEMINI_MEDIA_MODEL`) | no NVIDIA key |
+| Spoken replies | `gemini-2.5-flash-preview-tts` (`GEMINI_TTS_MODEL`, voice `GEMINI_TTS_VOICE`) | no OpenAI key |
+| Embeddings | `gemini-embedding-001` (`GEMINI_EMBED_MODEL`), sized to `EMBEDDING_DIM` | `EMBEDDING_PROVIDER=gemini`, or the chosen provider has no key |
+
 ## Embeddings (RAG)
 
 Chat and embeddings are **separate** — Anthropic has no embeddings model.
 
 | Provider | Env | Model | Dim |
 |---|---|---|---|
-| Voyage (default) | `VOYAGE_API_KEY` | `voyage-3` | 1024 |
+| Gemini (Render default) | `GEMINI_API_KEY` | `gemini-embedding-001` | `EMBEDDING_DIM` |
+| Voyage | `VOYAGE_API_KEY` | `voyage-3` | 1024 |
 | OpenAI | `OPENAI_API_KEY` | `text-embedding-3-small` | 1536 |
+| NVIDIA | `NVIDIA_API_KEY` | `nvidia/nv-embedqa-e5-v5` | 1024 |
 
-Switch with `EMBEDDING_PROVIDER=voyage|openai`. **Dimensions differ**, so switching requires
+Switch with `EMBEDDING_PROVIDER=gemini|voyage|openai|nvidia`. The `embedding` column is sized
+to `EMBEDDING_DIM` by migration `0002` while it's empty. **Dimensions differ**, so switching requires
 re-indexing the `embedding` pgvector column to the new `EMBEDDING_DIM` (and rebuilding the HNSW
 index). Voyage keys: <https://www.voyageai.com/>.
 
@@ -86,6 +98,12 @@ How external stores work here:
 `VECTOR_COLLECTION` (default `vayu_embeddings`) names the collection/index.
 
 ## Checking status
+
+Signed in, open **`/status`** in the web app: it checks every hop an AI feature needs (web
+database, `AI_SERVICE_URL`, reachability, the JWT bridge, a live model call, voice / video /
+embedding providers, the AI schema) and prints the exact setting to change for anything red.
+The raw data comes from the authenticated `GET /v1/diagnostics` (`?probe=true` adds the model
+call). Unauthenticated:
 
 ```bash
 curl -s https://<ai-host>/v1/providers | jq
