@@ -1,4 +1,4 @@
-import { getServiceToken } from "@/lib/ai";
+import { aiFailureMessage, getServiceToken } from "@/lib/ai";
 import { checkPermission } from "@/lib/session";
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL ?? "http://localhost:8787";
@@ -22,12 +22,19 @@ export async function POST(
   if (!token) return Response.json({ error: "unauthorized" }, { status: 401 });
 
   const form = await req.formData();
-  const res = await fetch(`${AI_SERVICE_URL}/v1/media/${kind}`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` }, // boundary set automatically
-    body: form,
-  });
-  const data = await res.json().catch(() => ({}));
+  let res: Response;
+  try {
+    res = await fetch(`${AI_SERVICE_URL}/v1/media/${kind}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }, // boundary set automatically
+      body: form,
+    });
+  } catch {
+    return Response.json({ error: aiFailureMessage(null) }, { status: 502 });
+  }
+  const data = (await res.json().catch(() => ({}))) as { detail?: unknown; error?: string };
+  const hint = aiFailureMessage(res.status, typeof data.detail === "string" ? data.detail : undefined);
+  if (hint) data.detail = hint;
   // Forward client errors (413 too-large, 422 undecodable, 503 not configured) so the
   // UI can show them; collapse anything else to 502.
   const status = res.ok

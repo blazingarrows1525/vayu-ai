@@ -96,6 +96,13 @@ failed callback now returns to `/login` with a readable reason:
 Changing `BETTER_AUTH_SECRET` invalidates the stored JWT signing key ("Failed to decrypt private
 key" in the logs; `/live` and AI features fail). Keep it stable, or delete the rows in `jwks`.
 
+## When AI features don't work
+
+Sign in and open **`/status`**. It names the broken hop and the exact fix — usually one of:
+`AI_SERVICE_URL` missing on vayu-web, `AUTH_JWKS_URL` on vayu-ai not pointing at
+`https://<vayu-web host>/api/auth/jwks`, or no `GEMINI_API_KEY` on vayu-ai (one Gemini key
+covers chat, voice, video and search). Feature errors in the UI point there too.
+
 ## The JWT/JWKS bridge in production
 
 Better Auth (web) serves JWKS at `/api/auth/jwks`. Point the AI plane's `AUTH_JWKS_URL` at the

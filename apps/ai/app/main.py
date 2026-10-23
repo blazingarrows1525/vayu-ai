@@ -17,6 +17,7 @@ from app.core.config import Settings, get_settings
 from app.core.observability import setup_observability
 from app.core.ratelimit import allow_request
 from app.rag.vectorstore import vector_store_status
+from app.services.embeddings import Embedder
 from app.services.llm import provider_status
 
 settings = get_settings()
@@ -31,12 +32,12 @@ def _log_startup_warnings(cfg: Settings) -> None:
             "no_llm_provider_configured",
             hint="set one of ANTHROPIC_API_KEY / GEMINI_API_KEY / OPENAI_API_KEY / GROQ_API_KEY / OPENROUTER_API_KEY",
         )
-    embed_key = cfg.openai_api_key if cfg.embedding_provider == "openai" else cfg.voyage_api_key
-    if not embed_key:
+    embedder = Embedder(cfg)
+    if not embedder.available:
         slog.warning(
             "embeddings_key_missing",
-            provider=cfg.embedding_provider,
-            hint="RAG needs an embeddings key (OPENAI_API_KEY or VOYAGE_API_KEY)",
+            provider=embedder.provider,
+            hint=f"RAG needs an embeddings key ({embedder.key_env}, or GEMINI_API_KEY)",
         )
     vs = vector_store_status(cfg)
     if vs["external"] and not vs["available"]:

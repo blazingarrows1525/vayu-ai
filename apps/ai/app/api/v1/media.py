@@ -8,6 +8,7 @@ RAG; voice *chat* turns are conversational and are not stored.
 import base64
 from typing import Literal
 
+import structlog
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +23,7 @@ from app.services.video import VideoProcessingError, VideoService
 from app.services.voice import VoiceService
 
 router = APIRouter()
+log = structlog.get_logger(__name__)
 
 _VOICE_SYSTEM = "You are a helpful voice assistant. Keep your answers concise, 1-3 sentences max."
 
@@ -44,6 +46,25 @@ async def _read_upload(file: UploadFile, settings: Settings) -> bytes:
             f"File is {len(data) // (1024 * 1024)}MB; the limit is {settings.max_upload_mb}MB.",
         )
     return data
+
+
+async def _remember(session: AsyncSession, settings: Settings, principal: Principal,
+                    workspace_id: str, *, title: str, source_type: str, text: str) -> None:
+    """Save into the workspace's knowledge base, best-effort: the user still gets their
+    transcript/summary if storage or embeddings are unavailable."""
+    try:
+        await ingest_document(
+            session, settings,
+            workspace_id=workspace_id,
+            created_by=principal.user_id,
+            document_id=None,
+            title=title,
+            source_type=source_type,
+            text=text,
+        )
+    except Exception as exc:  # noqa: BLE001 - logged; the response doesn't depend on it
+        await session.rollback()
+        log.warning("media_ingest_failed", source_type=source_type, error=str(exc))
 
 
 async def _speak(voice_service: VoiceService, text: str) -> str | None:
@@ -82,15 +103,8 @@ async def process_voice(
 
     # Ingest dictated transcripts into RAG (chat questions are not knowledge)
     if action == "transcribe" and transcript.strip():
-        await ingest_document(
-            session, settings,
-            workspace_id=workspace_id,
-            created_by=principal.user_id,
-            document_id=None,
-            title=f"{filename}.transcript",
-            source_type="audio",
-            text=transcript
-        )
+        await _remember(session, settings, principal, workspace_id,
+                        title=f"{filename}.transcript", source_type="audio", text=transcript)
 
     # 2. If it's a chat action, we pass it to LLM and synthesize the response
     if action == "chat":
@@ -151,14 +165,7 @@ async def process_video(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
 
     # Ingest the video summary into RAG
-    await ingest_document(
-        session, settings,
-        workspace_id=workspace_id,
-        created_by=principal.user_id,
-        document_id=None,
-        title=f"{filename}.summary",
-        source_type="video",
-        text=summary
-    )
+    await _remember(session, settings, principal, workspace_id,
+                    title=f"{filename}.summary", source_type="video", text=summary)
 
     return VideoResponse(summary=summary)
