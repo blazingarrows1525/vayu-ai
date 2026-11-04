@@ -88,15 +88,15 @@ missing states · P3 = refinement.
 
 | ID | P | Issue (evidence) | Status |
 |---|---|---|---|
-| S1 | P0 | `PATCH /api/documents/[id]` spreads the raw JSON body into the Drizzle `.set()`, so an editor can write `workspaceId`, `createdBy` or `isArchived`. It always returns `{ok:true}` (`lib/data.ts:55-63`, `api/documents/[id]/route.ts:19-25`) | open |
-| S2 | P0 | Comments GET/POST never check that the document is in the caller's workspace (`api/documents/[id]/comments/route.ts:10,22`; `lib/data.ts:68`) | open |
-| S3 | P0 | Comment PATCH resolves any comment by id, ignoring the document and workspace (`comments/route.ts:32-40`; `lib/data.ts:108`) | open |
-| S4 | P0 | Versions GET lists another workspace's snapshots (`versions/route.ts:10`; `lib/data.ts:211`) | open |
-| S5 | P0 | Restore returns another workspace's snapshot **content**, even though its scoped UPDATE changes 0 rows (`lib/data.ts:229-244`) | open |
-| S6 | P0 | Members API: `role` is not validated and role ranks are never compared. An admin can grant `owner`, promote themselves, or demote or remove the owner; there is no last-owner guard (`api/members/**`; `lib/rbac.ts` `ROLE_RANK` unused) | open |
-| S7 | P1 | Conversation messages are scoped to the workspace, not the user, and `role` is unvalidated (`api/conversations/[id]/messages/route.ts`) | open |
-| S8 | P0 | Open redirect after email sign-in. The guard only rejects `//`; `/\evil.com` and `/%09/evil.com` (decoded to a tab, then stripped by the URL parser) resolve off-origin (`components/auth-form.tsx:44-46,115`) | open |
-| S9 | P1 | Agent streams cut every step to 800 characters, and there is no final-result event, so long answers are silently truncated (`apps/ai/app/agents/runner.py:107`) | open |
+| S1 | P0 | `PATCH /api/documents/[id]` spreads the raw JSON body into the Drizzle `.set()`, so an editor can write `workspaceId`, `createdBy` or `isArchived`. It always returns `{ok:true}` (`lib/data.ts:55-63`, `api/documents/[id]/route.ts:19-25`) | ✅ fixed — field whitelist; 404 when nothing was updated |
+| S2 | P0 | Comments GET/POST never check that the document is in the caller's workspace (`api/documents/[id]/comments/route.ts:10,22`; `lib/data.ts:68`) | ✅ fixed — document ownership checked first; mentions limited to workspace members |
+| S3 | P0 | Comment PATCH resolves any comment by id, ignoring the document and workspace (`comments/route.ts:32-40`; `lib/data.ts:108`) | ✅ fixed — resolve requires the comment to belong to that document |
+| S4 | P0 | Versions GET lists another workspace's snapshots (`versions/route.ts:10`; `lib/data.ts:211`) | ✅ fixed |
+| S5 | P0 | Restore returns another workspace's snapshot **content**, even though its scoped UPDATE changes 0 rows (`lib/data.ts:229-244`) | ✅ fixed — scoped; restore now snapshots the current content first (`Before restoring vN`); atomic version numbering |
+| S6 | P0 | Members API: `role` is not validated and role ranks are never compared. An admin can grant `owner`, promote themselves, or demote or remove the owner; there is no last-owner guard (`api/members/**`; `lib/rbac.ts` `ROLE_RANK` unused) | ✅ fixed — assignable roles = admin/editor/viewer; actors grant and manage only lower ranks; no self-changes; owner untouchable |
+| S7 | P1 | Conversation messages are scoped to the workspace, not the user, and `role` is unvalidated (`api/conversations/[id]/messages/route.ts`) | ✅ fixed — conversation must belong to the caller; role ∈ user/assistant |
+| S8 | P0 | Open redirect after email sign-in. The guard only rejects `//`; `/\evil.com` and `/%09/evil.com` (decoded to a tab, then stripped by the URL parser) resolve off-origin (`components/auth-form.tsx:44-46,115`) | ✅ fixed — `lib/safe-redirect.ts` (same-origin parse) |
+| S9 | P1 | Agent streams cut every step to 800 characters, and there is no final-result event, so long answers are silently truncated (`apps/ai/app/agents/runner.py:107`) | ◐ backend fixed — new `result` frame with the full answer and a status; the UI renders it in Phase E |
 
 ### 3.2 Experience issues (summary — the full evidence lists come from the three auditors)
 
@@ -170,7 +170,7 @@ missing states · P3 = refinement.
 | Phase | Scope | Exit gate |
 |---|---|---|
 | A | This audit | ✅ inventory, register, baseline evidence |
-| S | Security fixes S1–S9, with e2e tests for cross-workspace isolation and the redirect guard | tests prove isolation |
+| S | Security fixes S1–S9, with e2e tests for cross-workspace isolation and the redirect guard | ✅ 6 e2e + 12 unit tests; each e2e test fails on the old code and passes on the fix |
 | B | Tokens, fonts, CSS layer fixes, primitives, MotionConfig, error/not-found boundaries | one route uses the system in both themes; checks pass |
 | C | Route groups, app header, navigation (dock + mobile bar), workspace context, skip link | every route reachable; nothing fixed covers content |
 | D | Dashboard, docs, document detail (+ Copilot + history UX), scratchpad editor (lazy) | create → write → Copilot → save → history works |

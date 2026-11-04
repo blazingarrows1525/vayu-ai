@@ -28,3 +28,22 @@ export type Permission = keyof typeof PERMISSIONS;
 export function can(role: Role | null | undefined, permission: Permission): boolean {
   return hasRole(role, PERMISSIONS[permission]);
 }
+
+/** Roles that can be granted through the members API — ownership is never assignable. */
+export const ASSIGNABLE_ROLES = ["admin", "editor", "viewer"] as const satisfies readonly Role[];
+export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
+
+export function isAssignableRole(value: unknown): value is AssignableRole {
+  return typeof value === "string" && (ASSIGNABLE_ROLES as readonly string[]).includes(value);
+}
+
+/** A member may only grant roles strictly below their own (owner → admin, admin → editor). */
+export function canAssignRole(actor: Role, role: Role): boolean {
+  return ROLE_RANK[actor] > ROLE_RANK[role];
+}
+
+/** A member may only change or remove members ranked strictly below them, so the owner (and
+ *  therefore the last owner) can never be demoted or removed through the API. */
+export function canManageMember(actor: Role, target: Role): boolean {
+  return ROLE_RANK[actor] > ROLE_RANK[target];
+}

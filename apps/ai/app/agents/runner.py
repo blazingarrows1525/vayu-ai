@@ -10,6 +10,7 @@ from collections.abc import AsyncIterator
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.graph import UNAVAILABLE as _UNAVAILABLE
 from app.agents.graph import build_agent_graph
 from app.agents.registry import AGENTS
 from app.core.config import Settings
@@ -96,10 +97,16 @@ async def stream_run(
     graph = build_agent_graph(_provider(settings), config)
 
     yield _sse("start", {"agent": agent_type})
+    # Steps carry a preview; the full answer arrives once, as a `result` frame before `done`.
+    final: str | None = None
+    status = "completed"
     try:
         async for event in graph.astream({"task": task}):
             for node, update in event.items():
                 snippet = update.get("output") or ""
+                if node in ("agent", "give_up") and snippet:
+                    final = snippet
+                    status = "limited" if node == "give_up" else "completed"
                 if not snippet and "steps" in update and update["steps"]:
                     snippet = update["steps"][-1].get("output", "")
                 yield _sse(
@@ -109,4 +116,10 @@ async def stream_run(
     except Exception as exc:  # noqa: BLE001 - surface as an error frame the UI renders
         log.error("agent_stream_failed", agent=agent_type, error=str(exc))
         yield _sse("step", {"node": "error", "output": "The agent run failed.", "tokens": 0})
+        final = None
+    if final is not None:
+        if final.strip() == _UNAVAILABLE:
+            yield _sse("result", {"status": "unavailable", "output": ""})
+        else:
+            yield _sse("result", {"status": status, "output": final})
     yield _sse("done", {})

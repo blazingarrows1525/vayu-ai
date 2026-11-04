@@ -2,6 +2,7 @@ import { db, documentVersion } from "@vayu/db";
 import { and, eq, inArray } from "drizzle-orm";
 import * as Diff from "diff";
 import { getDocument } from "@/lib/data";
+import { extractText } from "@/lib/doc-text";
 import { checkPermission } from "@/lib/session";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -44,16 +45,4 @@ export async function GET(req: Request, { params }: Ctx) {
     extractText(toVer.content),
   );
   return Response.json({ from, to, changes });
-}
-
-function extractText(json: unknown): string {
-  const node = json as { type?: string; text?: string; content?: unknown[] } | null;
-  if (!node) return "";
-  if (node.type === "text") return node.text ?? "";
-  if (Array.isArray(node.content)) {
-    return node.content
-      .map(extractText)
-      .join(node.type === "paragraph" || node.type === "heading" ? "\n" : "");
-  }
-  return "";
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { safeRedirect } from "@/lib/safe-redirect";
 import { motion } from "framer-motion";
 
 const INPUT =
@@ -40,10 +41,7 @@ function describeOAuthError(code: string): string {
 export function AuthForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const redirectParam = params.get("redirect");
-  const target = (
-    redirectParam?.startsWith("/") && !redirectParam.startsWith("//") ? redirectParam : "/dashboard"
-  ) as Route;
+  const target = safeRedirect(params.get("redirect")) as Route;
   const callbackError = params.get("error");
 
   const [error, setError] = useState<string | null>(
