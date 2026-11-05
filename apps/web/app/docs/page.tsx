@@ -1,69 +1,94 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { ChevronRight, FileText } from "lucide-react";
+import { getActiveMembership, requireSession } from "@/lib/session";
+import { can } from "@/lib/rbac";
+import { listDocuments } from "@/lib/data";
+import { plural, timeAgo } from "@/lib/format";
+import { PageContainer, PageHeader } from "@/components/ui/page";
+import { EmptyState, Notice } from "@/components/ui/feedback";
+import { Badge } from "@/components/ui/badge";
+import { NewDocumentButton } from "./new-document-button";
 
-interface Doc {
-  id: string;
-  title: string;
-  updatedAt: string;
-}
+export const metadata: Metadata = { title: "Documents" };
 
-export default function DocsPage() {
-  const router = useRouter();
-  const [docs, setDocs] = useState<Doc[]>([]);
+export default async function DocsPage() {
+  await requireSession();
+  const membership = await getActiveMembership();
 
-  useEffect(() => {
-    fetch("/api/documents")
-      .then((r) => (r.ok ? r.json() : { documents: [] }))
-      .then((d) => setDocs((d.documents ?? []) as Doc[]));
-  }, []);
-
-  async function create() {
-    const res = await fetch("/api/documents", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ title: "Untitled" }),
-    });
-    if (res.ok) router.push(`/docs/${(await res.json()).id}`);
+  if (!membership) {
+    return (
+      <main id="main" tabIndex={-1}>
+        <PageContainer size="narrow">
+          <PageHeader title="Documents" />
+          <Notice tone="warning" title="You're not in a workspace" role="note">
+            Documents live inside a workspace. Ask a workspace admin to invite you, then sign in again.
+          </Notice>
+        </PageContainer>
+      </main>
+    );
   }
 
-  return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
-      <header className="mb-8 flex items-center justify-between">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-vayu-accent">
-            VAYU AI
-          </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight">Documents</h1>
-        </div>
-        <button
-          onClick={create}
-          className="rounded-lg bg-vayu-accent px-4 py-2 text-sm font-semibold text-vayu-bg transition hover:bg-vayu-accent-2"
-        >
-          New document
-        </button>
-      </header>
+  const canWrite = can(membership.role, "document:write");
+  const docs = await listDocuments(membership.workspaceId);
+  const now = Date.now();
 
-      <ul className="flex flex-col gap-2">
-        {docs.length === 0 && (
-          <li className="text-sm text-vayu-muted">No documents yet — create one.</li>
+  return (
+    <main id="main" tabIndex={-1}>
+      <PageContainer size="narrow">
+        <PageHeader
+          eyebrow="Workspace"
+          title="Documents"
+          description={
+            docs.length > 0
+              ? `${plural(docs.length, "document")}, most recently edited first. Each one keeps its comments and version history.`
+              : "Everything your workspace writes. Each document keeps its comments and version history."
+          }
+          // An empty workspace gets one call to action, in the empty state below.
+          actions={canWrite ? docs.length > 0 && <NewDocumentButton /> : <Badge>View only</Badge>}
+        />
+
+        {docs.length === 0 ? (
+          <EmptyState
+            icon={<FileText />}
+            title="No documents yet"
+            description={
+              canWrite
+                ? "Create the first one. You can comment on it and save snapshots to compare or restore later."
+                : "Nothing has been written in this workspace yet. Editors and admins can create documents."
+            }
+            action={canWrite ? <NewDocumentButton /> : undefined}
+          />
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {docs.map((d) => (
+              <li key={d.id}>
+                <Link
+                  href={`/docs/${d.id}`}
+                  className="surface surface-interactive group flex items-center gap-3.5 rounded-xl px-4 py-3.5"
+                >
+                  <span
+                    aria-hidden
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-vayu-border bg-vayu-inset text-vayu-muted transition-colors group-hover:text-vayu-accent"
+                  >
+                    {d.icon ? <span className="text-base leading-none">{d.icon}</span> : <FileText className="h-4 w-4" />}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-vayu-fg">{d.title || "Untitled"}</span>
+                    <span className="mt-0.5 block text-xs text-vayu-muted">
+                      Edited <time dateTime={new Date(d.updatedAt).toISOString()}>{timeAgo(d.updatedAt, now)}</time>
+                    </span>
+                  </span>
+                  <ChevronRight
+                    aria-hidden
+                    className="h-4 w-4 shrink-0 text-vayu-subtle transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-vayu-accent"
+                  />
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
-        {docs.map((d) => (
-          <li key={d.id}>
-            <Link
-              href={`/docs/${d.id}`}
-              className="flex items-center justify-between rounded-lg border border-vayu-border bg-vayu-surface px-4 py-3 text-sm transition hover:border-vayu-accent"
-            >
-              <span className="font-medium text-vayu-fg">{d.title}</span>
-              <span className="text-xs text-vayu-muted">
-                {new Date(d.updatedAt).toLocaleDateString()}
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      </PageContainer>
     </main>
   );
 }

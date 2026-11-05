@@ -1,4 +1,5 @@
 import { type APIRequestContext, type BrowserContext, expect, test } from "@playwright/test";
+import { signUpUser } from "./helpers";
 
 /**
  * Tenant isolation + authorization on the BFF, against the real database. Two users sign up into
@@ -11,16 +12,7 @@ type User = { ctx: BrowserContext; api: APIRequestContext; email: string; userId
 const users: Record<"a" | "b", User> = {} as never;
 
 async function signUp(ctx: BrowserContext, label: string): Promise<User> {
-  const email = `sec-${label}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
-  // Better Auth allows 3 sign-ups / 10 s per IP and other specs sign up too: back off on 429.
-  for (let attempt = 0; ; attempt++) {
-    const res = await ctx.request.post("/api/auth/sign-up/email", {
-      data: { email, password: "sec-password-123", name: `Security ${label}` },
-    });
-    if (res.ok()) break;
-    if (res.status() !== 429 || attempt >= 4) throw new Error(`sign-up failed: ${res.status()}`);
-    await new Promise((r) => setTimeout(r, 10_500));
-  }
+  const email = await signUpUser(ctx, `sec-${label}`, "sec-password-123");
   const members = (await (await ctx.request.get("/api/members")).json()) as {
     members: { userId: string; email: string }[];
   };

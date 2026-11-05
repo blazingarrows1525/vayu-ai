@@ -209,7 +209,7 @@ export default function ResearchPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <h2 className="text-sm font-semibold tracking-wide">Knowledge Sources</h2>
               <Magnetic strength={0.1}>
-                <label className="cursor-pointer relative overflow-hidden rounded-xl bg-vayu-violet px-4 py-2 text-sm font-semibold text-white transition hover:bg-vayu-violet/80">
+                <label className="cursor-pointer relative overflow-hidden rounded-xl bg-vayu-violet px-4 py-2 text-sm font-semibold text-vayu-bg transition hover:bg-vayu-violet/80">
                   {uploading ? "Uploading…" : "Upload Document"}
                   <input
                     type="file"
@@ -291,7 +291,7 @@ export default function ResearchPage() {
                 <button
                   onClick={onAsk}
                   disabled={asking}
-                  className="rounded-xl bg-vayu-violet px-8 py-3 text-sm font-semibold text-white shadow-[0_0_15px_rgba(139,92,246,0.4)] transition hover:bg-vayu-violet/80 hover:shadow-[0_0_25px_rgba(139,92,246,0.6)] disabled:opacity-60"
+                  className="rounded-xl bg-vayu-violet px-8 py-3 text-sm font-semibold text-vayu-bg shadow-[0_0_15px_rgba(139,92,246,0.4)] transition hover:bg-vayu-violet/80 hover:shadow-[0_0_25px_rgba(139,92,246,0.6)] disabled:opacity-60"
                 >
                   {asking ? "Synthesizing…" : "Ask"}
                 </button>

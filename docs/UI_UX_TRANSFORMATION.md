@@ -103,7 +103,7 @@ missing states · P3 = refinement.
 | ID | P | Area | Issue | Status |
 |---|---|---|---|---|
 | U1 | P0 | Theme | 7 routes hardcode `#050505`/black/white, so they break the light theme. Light is the default for OS-light users (`layout.tsx:12`) | open |
-| U2 | P0 | Contrast | Light accent text 3.8:1, primary-button label 3.4–3.8:1, violet button labels 4.2:1; no light values for success/warning/danger (1.7–2.8:1 on white) | open |
+| U2 | P0 | Contrast | Light accent text 3.8:1, primary-button label 3.4–3.8:1, violet button labels 4.2:1; no light values for success/warning/danger (1.7–2.8:1 on white) | ◐ tokens fixed in B — every text pair the primitives use computes ≥ 4.5:1 in both themes (§4.8); routes adopt them as they're rebuilt (C–F) |
 | U3 | P0 | /docs/[id] | Save never checks the response, so failures look like success and edits are lost; an unknown id renders an editable blank document; restore has no confirmation and overwrites unsaved work | open |
 | U4 | P0 | /editor | Labelled a workspace editor but never saves. Fake "Real-time collaboration active", "Context window" and "LAST_SYNC" cards; floating cards overlap and capture clicks | open |
 | U5 | P0 | /voice, /media | Primary actions unreachable by keyboard (pointer-only push-to-talk; `hidden` file inputs); fake waveform; outdated "NVIDIA" copy | open |
@@ -120,15 +120,16 @@ missing states · P3 = refinement.
 | U16 | P1 | Landing 3D | Renders every frame even off-screen; ContactShadows re-render each frame; no WebGL error boundary; distortion ignores reduced motion | open |
 | U17 | P1 | Auth | Network error leaves the spinner forever; labels are placeholders only; no show-password; CLS 0.33 on mobile from provider buttons popping in | open |
 | U18 | P1 | Performance | 815 KB editor chunk prefetched on every app page (see §1.2) | open |
-| U19 | P1 | CSS | Custom utilities are unlayered, so `hover:glow*` variants never compile, the global `:focus-visible { border-radius }` squares round controls, the reduced-motion rule misses `::before` animations, and `.glass-panel:hover` lifts working surfaces (editor, forms) | open |
-| U20 | P2 | Docs list | Loading reads as "No documents yet"; create has no pending state (double-click creates duplicates) | open |
+| U19 | P1 | CSS | Custom utilities are unlayered, so `hover:glow*` variants never compile, the global `:focus-visible { border-radius }` squares round controls, the reduced-motion rule misses `::before` animations, and `.glass-panel:hover` lifts working surfaces (editor, forms) | ✅ fixed in B — `@utility` / `@layer components`; the focus ring keeps each control's radius; reduced motion covers pseudo-elements; only `.surface-interactive` lifts |
+| U20 | P2 | Docs list | Loading reads as "No documents yet"; create has no pending state (double-click creates duplicates) | ✅ fixed in B — server-rendered list (no false empty state), skeleton `loading.tsx`, one create action that stays busy until the editor opens, read-only view for viewers; e2e `experience.spec.ts` |
 | U21 | P2 | Vault | No empty, error or "search not configured" state; unlabelled raw scores; one global localStorage key that crashes on malformed data | open |
 | U22 | P2 | Analytics | Failed fetch → "Loading…" forever; AI tiles count Copilot only, unlabelled; spend shown to 4 decimals | open |
 | U23 | P2 | Dashboard | Raw user and workspace UUIDs, raw role values, developer copy (BFF/JWT/JWKS) and a `HTTP 200 · {json}` dump as primary content | open |
 | U24 | P2 | Status | Tailwind palette literals instead of tokens; "Not checked" counted as failures; operator fixes shown to every role | open |
-| U25 | P2 | Global | No error, not-found or loading boundaries; no per-route `<title>`; framer animations ignore reduced motion (no `MotionConfig`) | open |
+| U25 | P2 | Global | No error, not-found or loading boundaries; no per-route `<title>`; framer animations ignore reduced motion (no `MotionConfig`) | ◐ B — `error.tsx`, `not-found.tsx` (HTTP 404), `global-error.tsx`, the `%s · VAYU AI` title template and `MotionConfig reducedMotion="user"` are in; each route sets its title as it's rebuilt |
 | U26 | P2 | Legal | Dark-only; "Last updated" is the build date; boilerplate content ("non-commercial transitory viewing only") | open |
 | U27 | P3 | Misc | Third-party image hotlink; invalid `rgba(var(--hex))` shadows; dead classes; three different brand marks; editor H4–H6 unstyled; drag handle invisible | open |
+| U28 | P3 | Global | Both `<html>` and `<body>` painted the page colour, so on short pages body's box hid the fixed aurora/grid layers and left a hard horizontal edge where content ended (found in B) | ✅ fixed in B — only `<html>` paints it |
 
 ## 4. Design architecture (decisions)
 
@@ -164,6 +165,27 @@ missing states · P3 = refinement.
    - The editor is lazy-loaded inside its pages, so prefetching a route no longer pulls 815 KB.
    - The landing scene pauses off-screen, renders shadows once, starts at DPR 1, skips WebGL on
      small screens and `saveData`, and falls back to a static core when the WebGL context fails.
+8. **Tokens and verified contrast** (`app/globals.css`). Dark is the default; `html[data-theme="light"]`
+   overrides the same custom properties, so every `vayu-*` utility re-skins at runtime.
+
+   | Token | Dark | Light | Role |
+   |---|---|---|---|
+   | `bg` / `surface` / `elevated` / `inset` | `#060912` / `#0e1521` / `#131c2b` / `#0a101b` | `#f4f7fc` / `#ffffff` / `#ffffff` / `#f6f8fc` | page, cards, dialogs, inputs |
+   | `border` / `border-strong` | `#1c2738` / `#526888` | `#d9e2ef` / `#7d90a8` | decorative separation / input boundary (≥ 3:1) |
+   | `fg` / `muted` / `subtle` | `#e6edf6` / `#8aa0bd` / `#7a8ea9` | `#0c1220` / `#55677f` / `#5f7086` | body, secondary, tertiary text |
+   | `accent` / `on-accent` | `#38bdf8` / `#04121c` | `#0369a1` / `#ffffff` | primary action, links, focus ring |
+   | `violet` | `#a78bfa` | `#6d28d9` | secondary emphasis — never a fill under white text |
+   | `success` / `warning` / `danger` | `#34d399` / `#fbbf24` / `#f87171` | `#065f46` / `#92400e` / `#b91c1c` | status |
+
+   Computed WCAG ratios for every text pair the primitives render (badge text on its 10 % tint, notice
+   body on its tint, tabs, dialog text, button labels), on both `bg` and `surface`: dark ≥ 5.46:1,
+   light ≥ 4.71:1 (lowest: `subtle` on `bg`). Light success/warning started at `#047857`/`#b45309`, which
+   gave badges 4.09–4.45:1, so they were darkened to the values above.
+
+   Type: Geist Sans and Geist Mono (variable, self-hosted by `next/font/local` from the `geist`
+   package) with a small scale on top of Tailwind's: `text-display` (fluid hero), `text-page` (h1),
+   `text-section` (h2), `text-overline`. Motion tokens: `ease-standard`, `ease-emphasis`, `ease-exit`;
+   `--duration-fast/base/slow` = 120/200/320 ms.
 
 ## 5. Plan (gated phases)
 
@@ -171,7 +193,7 @@ missing states · P3 = refinement.
 |---|---|---|
 | A | This audit | ✅ inventory, register, baseline evidence |
 | S | Security fixes S1–S9, with e2e tests for cross-workspace isolation and the redirect guard | ✅ 6 e2e + 12 unit tests; each e2e test fails on the old code and passes on the fix |
-| B | Tokens, fonts, CSS layer fixes, primitives, MotionConfig, error/not-found boundaries | one route uses the system in both themes; checks pass |
+| B | Tokens, fonts, CSS layer fixes, primitives, MotionConfig, error/not-found boundaries | ✅ `/docs` on the shared system in dark/light × desktop/mobile; typecheck, 20 unit, build and 15 e2e pass |
 | C | Route groups, app header, navigation (dock + mobile bar), workspace context, skip link | every route reachable; nothing fixed covers content |
 | D | Dashboard, docs, document detail (+ Copilot + history UX), scratchpad editor (lazy) | create → write → Copilot → save → history works |
 | E | Research, agents (+ result event, stop), vault, analytics | contracts preserved; empty/loading/error states verified |
