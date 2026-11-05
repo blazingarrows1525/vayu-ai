@@ -33,7 +33,6 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-use-measure": "^2.1.7",
-    "simplex-noise": "^4.0.3",
     "three": "^0.185.1"
   },
   "devDependencies": {

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { AGENT_KINDS, LLM_PROVIDERS, RESEARCH_FILE_TYPES } from "@/lib/product";
 import { capabilities } from "@/lib/site";
 import { CountUp } from "./count-up";
 import { GlowButton } from "./glow-button";
@@ -63,21 +64,21 @@ export function Capabilities() {
   );
 }
 
+// Every number is counted from code (lib/product.ts, kept in sync with the AI plane by a test).
 const STATS = [
-  { value: 5, suffix: "", label: "LLM providers, one contract" },
-  { value: 7, suffix: "", label: "agent personas on LangGraph" },
-  { value: 8, suffix: "+", label: "document formats ingested" },
-  { value: 99.9, suffix: "%", label: "answers grounded in citations", decimals: 1 },
+  { value: LLM_PROVIDERS.length, suffix: "", label: "model providers behind one interface" },
+  { value: AGENT_KINDS.length, suffix: "", label: "agents built on LangGraph" },
+  { value: RESEARCH_FILE_TYPES.length, suffix: "", label: "file formats Research reads, plus web pages" },
 ] as const;
 
 export function Stats() {
   return (
     <section className="mx-auto w-full max-w-6xl px-6 pb-28">
-      <div className="glass shadow-ambient grid grid-cols-2 gap-y-10 rounded-3xl px-6 py-12 lg:grid-cols-4">
+      <div className="glass shadow-ambient grid gap-y-10 rounded-3xl px-6 py-12 sm:grid-cols-3">
         {STATS.map((s) => (
           <div key={s.label} className="text-center">
             <p className="text-4xl font-bold tabular-nums text-gradient sm:text-5xl">
-              <CountUp to={s.value} suffix={s.suffix} decimals={"decimals" in s ? s.decimals : 0} />
+              <CountUp to={s.value} suffix={s.suffix} decimals={0} />
             </p>
             <p className="mt-2 text-xs text-vayu-muted">{s.label}</p>
           </div>
@@ -91,13 +92,13 @@ const PLANES = [
   {
     name: "Product plane",
     tech: "Next.js 16 · React 19 · Better Auth · Drizzle",
-    desc: "The surface you touch — an immersive editor, deep research tools, and an agentic vault. Server-rendered, session-guarded, and relentlessly fast.",
+    desc: "The surface you touch: the editor, research, agents and voice. Pages are rendered on the server, and every request is checked against your workspace role.",
     accent: "accent" as const,
   },
   {
     name: "Intelligence plane",
-    tech: "FastAPI · pgvector · LangGraph · 5 LLM providers",
-    desc: "The cognitive engine — hybrid retrieval, streaming generation, and autonomous graphs. Connected via a stateless JWT bridge, infinitely scalable.",
+    tech: `FastAPI · pgvector · LangGraph · ${LLM_PROVIDERS.length} model providers`,
+    desc: "The engine: hybrid retrieval, streaming generation and agent graphs. It trusts nothing but a short-lived signed token from the product plane, so it holds no sessions of its own.",
     accent: "violet" as const,
   },
 ];
@@ -194,7 +195,7 @@ export function FinaleCTA() {
         className="mt-9 flex justify-center"
       >
         <Magnetic>
-          <GlowButton href="/signup">Create your workspace — free</GlowButton>
+          <GlowButton href="/signup">Create your workspace</GlowButton>
         </Magnetic>
       </motion.div>
     </section>

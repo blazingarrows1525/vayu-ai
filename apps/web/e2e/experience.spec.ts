@@ -43,3 +43,17 @@ test("an empty workspace offers one create action, and a double click creates on
   await expect(page.getByText("1 document, most recently edited first.", { exact: false })).toBeVisible();
   await ctx.close();
 });
+
+test("the landing page makes no invented claims, and phones get the static core instead of WebGL", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  const text = await page.locator("body").innerText();
+  for (const claim of ["99.9", "agents online", "tokens streamed", "v1.0", "14 modules", "checkpointed", "claude-sonnet", "— free"]) {
+    expect(text, `landing should not claim "${claim}"`).not.toContain(claim);
+  }
+  await page.waitForTimeout(1500);
+  await expect(page.locator("canvas")).toHaveCount(0);
+  await ctx.close();
+});

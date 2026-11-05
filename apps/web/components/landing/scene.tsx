@@ -13,7 +13,7 @@
  * bundle or SSR output.
  */
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
   ContactShadows,
@@ -72,7 +72,7 @@ function AICore({ still = false }: { still?: boolean }) {
             roughness={0.18}
             metalness={0.35}
             distort={0.38}
-            speed={1.7}
+            speed={still ? 0 : 1.7}
           />
         </mesh>
         {/* inner light so the core glows from within */}
@@ -111,7 +111,7 @@ function AICore({ still = false }: { still?: boolean }) {
   );
 }
 
-export default function HeroScene() {
+export default function HeroScene({ onContextLost }: { onContextLost?: () => void }) {
   // Bloom only on fine-pointer devices; PerformanceMonitor degrades dpr under load.
   const [effects, setEffects] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches,
@@ -122,15 +122,34 @@ export default function HeroScene() {
       window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     [],
   );
-  const [dpr, setDpr] = useState<number>(1.5);
+  // Start at 1×; PerformanceMonitor raises it only when the device keeps up.
+  const [dpr, setDpr] = useState<number>(1);
+  // Render only while the hero is on screen (and just once under reduced motion).
+  const box = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const el = box.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => setVisible(entry?.isIntersecting ?? true), { rootMargin: "120px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const maxDpr = useMemo(
     () => (typeof window === "undefined" ? 1.5 : Math.min(1.75, window.devicePixelRatio)),
     [],
   );
 
   return (
+    <div ref={box} className="absolute inset-0">
     <Canvas
       dpr={dpr}
+      frameloop={still ? "demand" : visible ? "always" : "never"}
+      onCreated={({ gl }) => {
+        gl.domElement.addEventListener("webglcontextlost", (e) => {
+          e.preventDefault();
+          onContextLost?.();
+        });
+      }}
       camera={{ position: [0, 0, 5.6], fov: 42 }}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       style={{ background: "transparent" }}
@@ -155,7 +174,8 @@ export default function HeroScene() {
           <Lightformer intensity={1.5} color="#ffffff" position={[0, 5, -2]} rotation-x={Math.PI / 2} scale={[8, 3, 1]} />
         </Environment>
         <AICore still={still} />
-        <ContactShadows position={[0, -2.2, 0]} opacity={0.4} scale={9} blur={2.8} far={4} />
+        {/* frames={1}: the shadow is baked once instead of re-rendered every frame */}
+        <ContactShadows position={[0, -2.2, 0]} opacity={0.4} scale={9} blur={2.8} far={4} frames={1} />
         {effects && (
           <EffectComposer multisampling={0}>
             <Bloom intensity={0.65} luminanceThreshold={0.25} luminanceSmoothing={0.7} mipmapBlur />
@@ -163,5 +183,6 @@ export default function HeroScene() {
         )}
       </PerformanceMonitor>
     </Canvas>
+    </div>
   );
 }

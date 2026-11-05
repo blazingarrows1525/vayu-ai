@@ -5,7 +5,7 @@ test("landing renders the hero and a way in, without the signed-in app navigatio
   await expect(
     page.getByRole("heading", { name: /intelligence at the speed of thought/i }),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in" }).first()).toBeVisible();
   // The module navigation only exists inside the signed-in shell.
   await expect(page.getByRole("navigation", { name: "Modules" })).toHaveCount(0);
 });

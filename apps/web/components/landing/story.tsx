@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { LLM_PROVIDERS, spelled } from "@/lib/product";
 import { motion, useReducedMotion } from "framer-motion";
 
 /**
@@ -14,19 +15,19 @@ const SCENES = [
   {
     n: "01",
     title: "Draft at the speed of thought",
-    copy: "The copilot streams straight into your document — rewrite, expand, change tone. Same keystroke, any of five LLM providers underneath.",
+    copy: `Copilot streams into your document: rewrite, expand, change tone. The same command works across ${spelled(LLM_PROVIDERS.length)} model providers, with failover if one is down.`,
     accent: "var(--color-vayu-accent)",
   },
   {
     n: "02",
     title: "Ask with receipts",
-    copy: "Upload PDFs, decks, sheets, or URLs. Hybrid retrieval finds the truth and every answer arrives with citations and a confidence score.",
+    copy: "Add PDFs, decks, sheets or web pages. Hybrid retrieval finds the relevant passages, and every answer shows the passages it's based on.",
     accent: "var(--color-vayu-violet)",
   },
   {
     n: "03",
     title: "Ship with agents",
-    copy: "LangGraph agents plan, research, and synthesize in checkpointed steps you can watch live — then hand you the deliverable.",
+    copy: "Agents reason, use tools when they need them, and report each step as they go, then hand you the result to keep as a document.",
     accent: "var(--color-vayu-accent-2)",
   },
 ] as const;
@@ -46,7 +47,7 @@ function SceneVisual({ index }: { index: number }) {
           </div>
         ))}
         <p className="mt-2 font-mono text-[11px] text-vayu-muted">
-          /continue · claude-sonnet-4-6 · streaming
+          /continue · workspace model · streaming
         </p>
       </div>
     );
@@ -63,10 +64,15 @@ function SceneVisual({ index }: { index: number }) {
           ))}
         </div>
         <div className="mt-3">
-          <p className="text-[11px] uppercase tracking-wider text-vayu-muted">confidence</p>
-          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-vayu-border">
-            <div className="h-full w-[92%] rounded-full bg-vayu-violet" data-confidence-bar />
-          </div>
+          <p className="text-[11px] uppercase tracking-wider text-vayu-muted">cited passage</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-vayu-fg">
+            &ldquo;Revenue grew in every region,{" "}
+            <span className="relative">
+              led by the new APAC team
+              <span aria-hidden className="absolute inset-x-0 -bottom-0.5 h-0.5 rounded-full bg-vayu-violet" data-confidence-bar />
+            </span>
+            .&rdquo;
+          </p>
         </div>
       </div>
     );
@@ -74,11 +80,11 @@ function SceneVisual({ index }: { index: number }) {
   // agent steps mock
   return (
     <div className="flex h-full flex-col justify-center gap-2.5 p-8">
-      {["plan", "research", "synthesize"].map((node) => (
+      {["reason", "use tools", "result"].map((node) => (
         <div key={node} className="glass flex items-center gap-3 rounded-xl px-4 py-3" data-agent-node>
           <span className="h-2 w-2 rounded-full bg-vayu-accent-2" />
           <span className="font-mono text-xs text-vayu-fg">{node}</span>
-          <span className="ml-auto text-[10px] text-vayu-muted">✓ checkpointed</span>
+          <span aria-hidden className="ml-auto text-[10px] text-vayu-muted">✓</span>
         </div>
       ))}
     </div>

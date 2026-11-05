@@ -10,6 +10,7 @@ import { EmptyState, Loading, Notice, Skeleton } from "@/components/ui/feedback"
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import { plural } from "@/lib/format";
+import { RESEARCH_ACCEPT, RESEARCH_FILE_TYPES } from "@/lib/product";
 import { saveMarkdownAsDocument } from "@/lib/save-as-document";
 
 type Source = { id: string; title: string; status: string; chunkCount: number; sourceType: string; stored?: boolean };
@@ -18,7 +19,6 @@ type Answer = { answer: string; confidence: number; citations: Citation[]; retri
 type Message = { tone: "success" | "danger" | "warning"; text: string };
 
 const MAX_UPLOAD_MB = 25;
-const ACCEPT = ".pdf,.docx,.pptx,.txt,.md,.csv,.xlsx";
 const NO_MODEL_PREFIX = "Retrieved relevant context (see citations).";
 
 function errorText(data: unknown, fallback: string): string {
@@ -225,11 +225,13 @@ export function ResearchCenter({ canWrite }: { canWrite: boolean }) {
               >
                 Choose a file
               </Button>
-              <p className="text-xs text-vayu-subtle">PDF, Word, PowerPoint, Excel, CSV, Markdown or text · up to {MAX_UPLOAD_MB} MB</p>
+              <p className="text-xs text-vayu-subtle">
+                {RESEARCH_FILE_TYPES.map((t) => t.label).join(", ")} · up to {MAX_UPLOAD_MB} MB
+              </p>
               <input
                 ref={fileInput}
                 type="file"
-                accept={ACCEPT}
+                accept={RESEARCH_ACCEPT}
                 tabIndex={-1}
                 aria-hidden
                 className="sr-only"
