@@ -369,6 +369,11 @@ html:has(dialog[open]:modal) {
     animation: skeleton 1.4s ease-in-out infinite;
   }
 
+  /* The document page's editor card shows that typing will land there. */
+  .doc-surface:has(.ProseMirror-focused) {
+    border-color: color-mix(in oklab, var(--color-vayu-accent) 45%, var(--color-vayu-border));
+  }
+
   /* Readable long-form text (legal pages, research answers, generated output). */
   .prose-vayu {
     max-width: 68ch;

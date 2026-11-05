@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Activity, LogOut, Users } from "lucide-react";
 import type { Role } from "@vayu/db";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +23,6 @@ const ITEM =
 
 /** Who you're signed in as, your role here, and the account-level destinations. */
 export function AccountMenu({ user, role }: { user: ShellUser; role: Role | null }) {
-  const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
 
   async function handleSignOut() {
@@ -32,9 +30,9 @@ export function AccountMenu({ user, role }: { user: ShellUser; role: Role | null
     try {
       await signOut();
     } finally {
-      // Even if the request failed, leave: /login re-checks the session.
-      router.push("/login");
-      router.refresh();
+      // A full load (not a client navigation) drops every page the router cached for this
+      // account. Even if the request failed, leave: /login re-checks the session.
+      window.location.assign("/login");
     }
   }
 

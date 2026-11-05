@@ -8,7 +8,7 @@ import { plural, timeAgo } from "@/lib/format";
 import { PageContainer, PageHeader } from "@/components/ui/page";
 import { EmptyState, Notice } from "@/components/ui/feedback";
 import { Badge } from "@/components/ui/badge";
-import { NewDocumentButton } from "./new-document-button";
+import { NewDocumentButton } from "@/components/docs/new-document-button";
 
 export const metadata: Metadata = { title: "Documents" };
 

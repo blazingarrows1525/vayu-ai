@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Check, ChevronsUpDown, Users } from "lucide-react";
 import type { Role } from "@vayu/db";
 import { Popover } from "@/components/ui/popover";
@@ -29,7 +29,6 @@ function WorkspaceAvatar({ name, className }: { name: string; className?: string
 
 /** Shows which workspace you're acting in and switches between the ones you belong to. */
 export function WorkspaceSwitcher({ workspaces, active }: { workspaces: ShellWorkspace[]; active: ShellWorkspace | null }) {
-  const router = useRouter();
   const pathname = usePathname();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,17 +52,19 @@ export function WorkspaceSwitcher({ workspaces, active }: { workspaces: ShellWor
             ? "You're no longer a member of that workspace."
             : `Couldn't switch workspaces (error ${res.status}).`,
         );
+        setPending(null);
         return;
       }
       close();
-      // Stay in the same module; a document or run from the old workspace won't exist here.
-      router.push(sectionFor(pathname)?.href ?? "/dashboard");
-      router.refresh();
+      // A full load, not a client navigation: every page's data changes with the workspace, and
+      // the client router may hold pages rendered for the old one. Stay in the same module (a
+      // document or run from the old workspace won't exist in the new one).
+      window.location.assign(sectionFor(pathname)?.href ?? "/dashboard");
+      return; // stay "pending" until the new page loads
     } catch {
       setError("Couldn't reach VAYU. Check your connection and try again.");
-    } finally {
-      setPending(null);
     }
+    setPending(null);
   }
 
   return (

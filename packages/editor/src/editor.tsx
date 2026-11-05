@@ -74,7 +74,7 @@ export function VayuEditor({
   }, [editor, editable]);
 
   return (
-    <div style={{ position: "relative" }}>
+    <div className="vayu-editor" style={{ position: "relative" }}>
       <EditorContent editor={editor} className={className} />
       {editor && (
         <DragHandle editor={editor} className="vayu-drag-handle">

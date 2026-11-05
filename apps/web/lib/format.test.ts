@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { plural, timeAgo } from "./format";
+import { formatUsd, plural, timeAgo } from "./format";
 
 const NOW = Date.parse("2026-11-04T12:00:00Z");
 const ago = (seconds: number) => new Date(NOW - seconds * 1000);
@@ -25,6 +25,16 @@ describe("timeAgo", () => {
 
   it("returns an empty string for an invalid date", () => {
     expect(timeAgo("not a date", NOW)).toBe("");
+  });
+});
+
+describe("formatUsd", () => {
+  it("never shows false precision for tiny amounts", () => {
+    expect(formatUsd(0)).toBe("$0");
+    expect(formatUsd(0.00042)).toBe("<$0.01");
+    expect(formatUsd(0.5)).toBe("$0.50");
+    expect(formatUsd(1234.5)).toBe("$1,234.50");
+    expect(formatUsd(Number.NaN)).toBe("$0");
   });
 });
 

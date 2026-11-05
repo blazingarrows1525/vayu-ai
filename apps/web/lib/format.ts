@@ -26,3 +26,10 @@ export function timeAgo(value: Date | string | number, now: number = Date.now())
 export function plural(count: number, one: string, many = `${one}s`): string {
   return `${count.toLocaleString("en")} ${count === 1 ? one : many}`;
 }
+
+/** "$0", "<$0.01", "$1.25" — sub-cent AI costs shouldn't read as precise accounting. */
+export function formatUsd(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return "$0";
+  if (value < 0.01) return "<$0.01";
+  return `$${value.toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
