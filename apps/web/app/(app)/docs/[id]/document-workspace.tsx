@@ -329,6 +329,8 @@ export function DocumentWorkspace({ doc, canWrite }: { doc: Doc; canWrite: boole
       <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="doc-surface surface min-w-0 rounded-2xl px-5 py-7 sm:px-10 sm:py-9">
           <div className="mx-auto max-w-3xl">
+            {/* The page heading for screen-reader navigation; the visible title is the editable field. */}
+            <h1 className="sr-only">{title.trim() || "Untitled"}</h1>
             <label htmlFor="doc-title" className="sr-only">
               Document title
             </label>

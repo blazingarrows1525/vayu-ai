@@ -35,7 +35,6 @@ export default async function DashboardPage() {
   const workspace = workspaces.find((w) => w.id === membership?.workspaceId);
   const firstName = session.user.name?.trim().split(/\s+/)[0];
   const canWrite = can(membership?.role, "document:write");
-  const now = Date.now();
   const recent = docs.slice(0, 5);
 
   return (
@@ -116,7 +115,7 @@ export default async function DashboardPage() {
                     <FileText aria-hidden className="h-4 w-4 shrink-0 text-vayu-subtle group-hover:text-vayu-accent" />
                     <span className="min-w-0 flex-1 truncate text-sm font-medium text-vayu-fg">{d.title || "Untitled"}</span>
                     <time dateTime={new Date(d.updatedAt).toISOString()} className="shrink-0 text-xs text-vayu-subtle">
-                      {timeAgo(d.updatedAt, now)}
+                      {timeAgo(d.updatedAt)}
                     </time>
                   </Link>
                 </li>

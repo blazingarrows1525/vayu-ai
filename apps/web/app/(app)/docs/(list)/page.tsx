@@ -29,7 +29,6 @@ export default async function DocsPage() {
 
   const canWrite = can(membership.role, "document:write");
   const docs = await listDocuments(membership.workspaceId);
-  const now = Date.now();
 
   return (
     <PageContainer size="narrow">
@@ -73,7 +72,7 @@ export default async function DocsPage() {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-vayu-fg">{d.title || "Untitled"}</span>
                   <span className="mt-0.5 block text-xs text-vayu-muted">
-                    Edited <time dateTime={new Date(d.updatedAt).toISOString()}>{timeAgo(d.updatedAt, now)}</time>
+                    Edited <time dateTime={new Date(d.updatedAt).toISOString()}>{timeAgo(d.updatedAt)}</time>
                   </span>
                 </span>
                 <ChevronRight

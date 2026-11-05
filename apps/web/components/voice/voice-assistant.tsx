@@ -49,6 +49,7 @@ export function VoiceAssistant() {
   const [error, setError] = useState<{ text: string; status?: number } | null>(null);
   const [levels, setLevels] = useState<number[]>(() => Array(BARS).fill(0));
   const [seconds, setSeconds] = useState(0);
+  const [autoplayId, setAutoplayId] = useState<number | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
   const audioCtx = useRef<AudioContext | null>(null);
@@ -101,7 +102,9 @@ export function VoiceAssistant() {
         });
         return;
       }
-      setTurns((t) => [...t, { id: nextId.current++, heard: data.heard ?? "", reply: data.transcript ?? "", audioUrl: data.audio_url ?? null }]);
+      const id = nextId.current++;
+      setTurns((t) => [...t, { id, heard: data.heard ?? "", reply: data.transcript ?? "", audioUrl: data.audio_url ?? null }]);
+      setAutoplayId(id);
     } catch {
       setError({ text: "Couldn't reach VAYU. Check your connection and try again." });
     } finally {
@@ -294,8 +297,7 @@ export function VoiceAssistant() {
                   <p className="whitespace-pre-wrap">{t.reply}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     {t.audioUrl ? (
-                      // eslint-disable-next-line jsx-a11y/media-has-caption -- the reply text above is the transcript
-                      <audio controls src={t.audioUrl} autoPlay={t.id === nextId.current - 1} className="h-9 max-w-full" />
+                      <audio controls src={t.audioUrl} autoPlay={t.id === autoplayId} className="h-9 max-w-full" />
                     ) : (
                       <span className="text-xs text-vayu-subtle">Text-only reply (no voice configured).</span>
                     )}

@@ -38,7 +38,9 @@ export function ScrambleText({ text, className = "" }: { text: string; className
   }, [inView, reduced, text]);
 
   return (
-    <span ref={ref} className={className} aria-label={text}>
+    // The real text for assistive tech; the scrambling glyphs are hidden from it.
+    <span ref={ref} className={className}>
+      <span className="sr-only">{text}</span>
       <span aria-hidden>{display}</span>
     </span>
   );

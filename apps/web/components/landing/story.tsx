@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { LLM_PROVIDERS, spelled } from "@/lib/product";
-import { motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
 
 /**
  * "How VAYU thinks" — a pinned, scroll-scrubbed story. The section is 320vh

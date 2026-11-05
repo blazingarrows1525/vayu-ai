@@ -205,7 +205,9 @@ export function LiveConsole() {
           </h1>
           <StatusPill status={session.status} />
         </div>
-        <div className="flex items-center gap-2">
+        {/* Own row on phones: otherwise the pill's label ("Connecting" → "Live") decides whether
+            these fit beside it, and the whole console jumps when the connection opens. */}
+        <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
           <CapChip on={session.caps.stt} label="Voice in" />
           <CapChip on={session.caps.tts} label="Voice out" />
           <IconButton
@@ -565,8 +567,9 @@ function EmptyState({ onPick, disabled }: { onPick: (text: string) => void; disa
             type="button"
             disabled={disabled}
             onClick={() => onPick(s)}
-            initial={reduced ? false : { opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            // position-only entrance: an opacity fade kept the chips (the largest paint) blank until hydration
+            initial={reduced ? false : { y: 10 }}
+            animate={{ y: 0 }}
             transition={{ delay: 0.08 * i, type: "spring", stiffness: 300, damping: 24 }}
             whileHover={reduced || disabled ? undefined : { y: -3, scale: 1.02 }}
             whileTap={reduced || disabled ? undefined : { scale: 0.98 }}
