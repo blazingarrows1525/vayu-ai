@@ -120,10 +120,10 @@ export default function DocPage() {
     if (res.ok && editor) editor.commands.setContent((await res.json()).content);
   }
 
-  if (!loaded) return <main className="px-6 py-12 text-vayu-muted">Loading…</main>;
+  if (!loaded) return <div className="px-6 py-12 text-vayu-muted">Loading…</div>;
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
+    <div className="mx-auto max-w-5xl px-6 pt-10 pb-nav">
       <header className="mb-4 flex items-center justify-between gap-4">
         <input
           value={title}
@@ -248,6 +248,6 @@ export default function DocPage() {
           </ul>
         </aside>
       </div>
-    </main>
+    </div>
   );
 }

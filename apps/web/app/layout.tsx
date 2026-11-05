@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { site } from "@/lib/site";
-import { FloatingDock } from "@/components/floating-dock";
 import { MotionProvider } from "@/components/motion-provider";
 import "./globals.css";
 
@@ -35,7 +34,6 @@ export default function RootLayout({
           Skip to content
         </a>
         <MotionProvider>{children}</MotionProvider>
-        <FloatingDock />
       </body>
     </html>
   );

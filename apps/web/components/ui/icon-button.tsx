@@ -16,7 +16,7 @@ export function Tooltip({ label, side = "top" }: { label: ReactNode; side?: Side
       className={cn(
         "glass pointer-events-none absolute left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-1",
         "text-[11px] font-medium text-vayu-fg opacity-0 shadow-overlay transition-opacity duration-150",
-        "group-hover/tip:opacity-100 group-hover/tip:delay-300 group-focus-within/tip:opacity-100",
+        "group-hover/tip:opacity-100 group-hover/tip:delay-300 group-has-[:focus-visible]/tip:opacity-100",
         TIP_SIDE[side],
       )}
     >

@@ -226,6 +226,14 @@ html:has(dialog[open]:modal) {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+@keyframes popover-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes sheet-in {
+  from { transform: translateY(100%); }
+  to   { transform: none; }
+}
 
 /* ============================================================
    Components (layered, so Tailwind utilities can still override them)
@@ -329,6 +337,22 @@ html:has(dialog[open]:modal) {
     animation: dialog-in var(--duration-base) var(--ease-emphasis);
   }
   .vayu-dialog[open]::backdrop {
+    animation: fade-in var(--duration-base) ease-out;
+  }
+
+  /* Native popover panels (Popover): a short drop-in from the trigger. */
+  .vayu-popover:popover-open {
+    animation: popover-in var(--duration-fast) var(--ease-emphasis);
+  }
+
+  /* Bottom sheet on the native modal <dialog> (the phone "More" menu). */
+  .vayu-sheet::backdrop {
+    background: var(--scrim, rgba(2, 6, 14, 0.55));
+  }
+  .vayu-sheet[open] {
+    animation: sheet-in var(--duration-slow) var(--ease-emphasis);
+  }
+  .vayu-sheet[open]::backdrop {
     animation: fade-in var(--duration-base) ease-out;
   }
 

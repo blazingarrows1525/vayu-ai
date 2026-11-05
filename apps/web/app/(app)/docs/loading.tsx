@@ -3,7 +3,7 @@ import { PageContainer } from "@/components/ui/page";
 
 export default function DocsLoading() {
   return (
-    <main id="main" tabIndex={-1} aria-busy="true">
+    <div aria-busy="true">
       <PageContainer size="narrow">
         <Loading srOnly label="Loading documents…" />
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
@@ -20,6 +20,6 @@ export default function DocsLoading() {
           ))}
         </div>
       </PageContainer>
-    </main>
+    </div>
   );
 }

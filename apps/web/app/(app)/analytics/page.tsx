@@ -35,7 +35,7 @@ export default function AnalyticsPage() {
     : [];
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
+    <div className="mx-auto max-w-3xl px-6 pt-12 pb-nav">
       <header className="mb-8 flex items-center justify-between">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-vayu-accent">
@@ -60,6 +60,6 @@ export default function AnalyticsPage() {
           ))}
         </div>
       )}
-    </main>
+    </div>
   );
 }

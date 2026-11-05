@@ -1,5 +1,13 @@
 import type { Role } from "@vayu/db";
 
+/** How each role is named in the interface. */
+export const ROLE_LABEL: Record<Role, string> = {
+  owner: "Owner",
+  admin: "Admin",
+  editor: "Editor",
+  viewer: "Viewer",
+};
+
 /** Role hierarchy, most → least privileged. */
 export const ROLE_RANK: Record<Role, number> = {
   viewer: 0,

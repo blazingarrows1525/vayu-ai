@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Page not found" };
 
 export default function NotFound() {
   return (
-    <main id="main" tabIndex={-1} className="grid min-h-[70vh] place-items-center px-4 pb-nav pt-12">
+    <main id="main" tabIndex={-1} className="grid min-h-[70vh] place-items-center px-4 pb-12 pt-12">
       <div className="surface w-full max-w-md rounded-2xl p-8 text-center">
         <p className="text-overline font-semibold uppercase text-vayu-accent">404</p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">Page not found</h1>

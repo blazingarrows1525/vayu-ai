@@ -14,7 +14,7 @@ export default function Home() {
   return (
     <SmoothScroll>
       <ScrollProgress />
-      <main className="relative">
+      <main id="main" tabIndex={-1} className="relative">
         <Hero />
         <Capabilities />
         <Story />

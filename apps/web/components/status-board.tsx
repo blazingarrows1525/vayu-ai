@@ -42,7 +42,7 @@ export function StatusBoard() {
   const failures = result?.checks.filter((c) => c.status === "fail").length ?? 0;
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-6 pb-32 pt-12">
+    <div className="mx-auto w-full max-w-3xl px-6 pb-nav pt-12">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-vayu-accent">VAYU AI</p>
@@ -104,6 +104,6 @@ export function StatusBoard() {
           </p>
         </>
       )}
-    </main>
+    </div>
   );
 }

@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function TermsPage() {
   return (
-    <main className="min-h-screen bg-[#050505] text-white py-20 px-6">
+    <main id="main" tabIndex={-1} className="min-h-screen bg-[#050505] text-white py-20 px-6">
       <div className="max-w-3xl mx-auto">
         <div className="mb-8 inline-block">
           <GlowButton href="/" variant="ghost" className="px-4 py-2">

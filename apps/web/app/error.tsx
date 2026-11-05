@@ -10,7 +10,7 @@ export default function RouteError({ error, reset }: { error: Error & { digest?:
   }, [error]);
 
   return (
-    <main id="main" tabIndex={-1} className="grid min-h-[70vh] place-items-center px-4 pb-nav pt-12">
+    <main id="main" tabIndex={-1} className="grid min-h-[70vh] place-items-center px-4 pb-12 pt-12">
       <div className="surface w-full max-w-md rounded-2xl p-8 text-center">
         <p className="text-overline font-semibold uppercase text-vayu-danger">Unexpected error</p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">This page couldn&rsquo;t load</h1>

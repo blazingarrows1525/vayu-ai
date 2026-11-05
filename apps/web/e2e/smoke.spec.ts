@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-test("landing renders the hero and the floating AI dock", async ({ page }) => {
+test("landing renders the hero and a way in, without the signed-in app navigation", async ({ page }) => {
   await page.goto("/");
   await expect(
     page.getByRole("heading", { name: /intelligence at the speed of thought/i }),
   ).toBeVisible();
-  await expect(page.getByRole("navigation", { name: /vayu navigation/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
+  // The module navigation only exists inside the signed-in shell.
+  await expect(page.getByRole("navigation", { name: "Modules" })).toHaveCount(0);
 });
 
 test("sign-in page renders", async ({ page }) => {

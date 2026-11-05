@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, eq } from "drizzle-orm";
-import { db, membership, type Role, workspace } from "@vayu/db";
+import { db, membership, type Role, session, workspace } from "@vayu/db";
 
 function slugify(input: string): string {
   const base = input
@@ -35,9 +35,8 @@ export async function bootstrapWorkspace(user: {
 }
 
 /**
- * Resolve the workspace + role to stamp into the JWT. Prefers an explicitly
- * active workspace, otherwise the user's first (personal) workspace.
- * Active-workspace switching is wired in Phase 9.
+ * Resolve the workspace + role to stamp into the JWT. Prefers the session's active workspace
+ * (if the user is still a member of it), otherwise the user's first (personal) workspace.
  */
 export async function resolveTokenWorkspace(
   userId: string,
@@ -65,4 +64,41 @@ export async function resolveTokenWorkspace(
     .limit(1);
 
   return first ?? null;
+}
+
+export type WorkspaceSummary = { id: string; name: string; role: Role };
+
+/** Every workspace the user belongs to, in the same order resolveTokenWorkspace falls back by
+ *  (oldest membership first — the personal workspace). */
+export async function listUserWorkspaces(userId: string): Promise<WorkspaceSummary[]> {
+  return db
+    .select({ id: workspace.id, name: workspace.name, role: membership.role })
+    .from(membership)
+    .innerJoin(workspace, eq(membership.workspaceId, workspace.id))
+    .where(eq(membership.userId, userId))
+    .orderBy(asc(membership.createdAt));
+}
+
+/**
+ * Point one session at a workspace the user is a member of. Requests made with that session —
+ * page data, API checks and the JWT minted for the intelligence plane — then act within it.
+ * Returns null (and changes nothing) when the user isn't a member.
+ */
+export async function setSessionWorkspace(
+  sessionId: string,
+  userId: string,
+  workspaceId: string,
+): Promise<WorkspaceSummary | null> {
+  const [target] = await db
+    .select({ id: workspace.id, name: workspace.name, role: membership.role })
+    .from(membership)
+    .innerJoin(workspace, eq(membership.workspaceId, workspace.id))
+    .where(and(eq(membership.userId, userId), eq(membership.workspaceId, workspaceId)))
+    .limit(1);
+  if (!target) return null;
+  await db
+    .update(session)
+    .set({ activeWorkspaceId: workspaceId, updatedAt: new Date() })
+    .where(and(eq(session.id, sessionId), eq(session.userId, userId)));
+  return target;
 }

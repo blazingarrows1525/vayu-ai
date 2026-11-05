@@ -183,7 +183,7 @@ export function LiveConsole() {
           : "Hold the mic or Space to talk · tap to toggle · or type below";
 
   return (
-    <main className="relative mx-auto flex min-h-[100dvh] max-w-6xl flex-col px-4 pb-[13rem] pt-6 sm:px-6 lg:h-[100dvh] lg:min-h-0 lg:pb-28">
+    <div className="relative mx-auto flex min-h-[100dvh] max-w-6xl flex-col px-4 pb-[13rem] pt-6 sm:px-6 lg:h-[100dvh] lg:min-h-0 lg:pb-28">
       {/* ── header ─────────────────────────────────────────────────── */}
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -245,7 +245,7 @@ export function LiveConsole() {
         {/* ── transcript ───────────────────────────────────────────── */}
         <section
           aria-label="Conversation"
-          className="glass-panel glass-static flex min-h-[18rem] flex-col overflow-hidden rounded-2xl lg:h-full lg:min-h-0"
+          className="glass-panel flex min-h-[18rem] flex-col overflow-hidden rounded-2xl lg:h-full lg:min-h-0"
         >
           <div
             ref={scroller}
@@ -268,8 +268,8 @@ export function LiveConsole() {
 
       {/* ── composer ────────────────────────────────────────────────── */}
       {/* mobile: pinned above the dock · desktop: last row of the viewport-height layout */}
-      <div className="z-40 mt-6 max-lg:fixed max-lg:inset-x-2 max-lg:bottom-[5.25rem] max-lg:rounded-[1.25rem] max-lg:bg-vayu-bg/95 max-lg:p-1.5 max-lg:shadow-[0_-12px_40px_-12px_rgba(0,0,0,0.5)] max-lg:backdrop-blur-xl">
-        <div className="glass-panel glass-static edge-flow flex items-center gap-3 rounded-2xl p-2.5 pl-4">
+      <div className="z-40 mt-6 max-lg:fixed max-lg:inset-x-2 max-lg:bottom-[calc(4.75rem+env(safe-area-inset-bottom))] max-lg:rounded-[1.25rem] max-lg:bg-vayu-bg/95 max-lg:p-1.5 max-lg:shadow-[0_-12px_40px_-12px_rgba(0,0,0,0.5)] max-lg:backdrop-blur-xl">
+        <div className="glass-panel edge-flow flex items-center gap-3 rounded-2xl p-2.5 pl-4">
           <form
             className="flex flex-1 items-center gap-2"
             onSubmit={(e) => {
@@ -312,7 +312,7 @@ export function LiveConsole() {
           {micError ?? hint}
         </p>
       </div>
-    </main>
+    </div>
   );
 }
 

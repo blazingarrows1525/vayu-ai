@@ -41,7 +41,7 @@ export default function VoicePage() {
   };
 
   return (
-    <main className="relative min-h-screen bg-[#050505] text-white overflow-hidden px-6 py-10 flex flex-col items-center justify-center">
+    <div className="relative min-h-screen bg-[#050505] text-white overflow-hidden px-6 pt-10 pb-nav flex flex-col items-center justify-center">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-vayu-accent/10 via-[#050505] to-[#050505] opacity-60 pointer-events-none"></div>
       
       <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col items-center gap-12">
@@ -75,6 +75,6 @@ export default function VoicePage() {
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }

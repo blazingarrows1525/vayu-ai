@@ -55,7 +55,8 @@ console errors) are in `route-report.json`.
 Access: the `proxy.ts` matcher only checks that a session **cookie exists**. Before this work, only
 `/dashboard`, `/live` and `/status` validated the session on the server (`requireSession`). Every other
 protected page was a client component that relied on BFF `checkPermission` (viewer = read, editor =
-write, admin = manage members).
+write, admin = manage members). Since Phase C every signed-in route sits in the `(app)` route group,
+whose layout validates the session on the server for each request.
 
 | Route | Purpose / primary task | Data / APIs | States present → missing | Theme | Priority |
 |---|---|---|---|---|---|
@@ -108,10 +109,10 @@ missing states · P3 = refinement.
 | U4 | P0 | /editor | Labelled a workspace editor but never saves. Fake "Real-time collaboration active", "Context window" and "LAST_SYNC" cards; floating cards overlap and capture clicks | open |
 | U5 | P0 | /voice, /media | Primary actions unreachable by keyboard (pointer-only push-to-talk; `hidden` file inputs); fake waveform; outdated "NVIDIA" copy | open |
 | U6 | P0 | /agents | Final output truncated (S9); no stop; errors shown as "HTTP 502"; streams not aborted on navigation | open |
-| U7 | P0 | /settings/members | Every role sees management controls, which fail with a silent 403. Remove has no confirmation. Invites are unusable because there is no workspace switching. No link to the page | open |
-| U8 | P1 | Shell | One global fixed dock is the only navigation: no header, workspace context, account menu or sign-out outside the dashboard, no skip link, no `aria-current`; labels on hover only; tiles float continuously; hides destinations on phones | open |
-| U9 | P1 | Shell | The dock is shown to signed-out visitors on `/`, `/privacy` and `/terms` (11 links that all bounce to login) and covers the hero scroll hint | open |
-| U10 | P1 | Layout | Pages pad 40–48 px at the bottom against an ≈82 px fixed dock, so last rows sit underneath it | open |
+| U7 | P0 | /settings/members | Every role sees management controls, which fail with a silent 403. Remove has no confirmation. Invites are unusable because there is no workspace switching. No link to the page | ◐ C — invites now work: workspace switching (session `activeWorkspaceId`, honoured by page data, API checks and the intelligence-plane JWT) and links from the account menu and switcher; role gating and confirmation land with the page in F |
+| U8 | P1 | Shell | One global fixed dock is the only navigation: no header, workspace context, account menu or sign-out outside the dashboard, no skip link, no `aria-current`; labels on hover only; tiles float continuously; hides destinations on phones | ✅ fixed in C — server-guarded `(app)` layout; header with workspace switcher, module label, theme and account menu (members, status, sign out); still, grouped dock with labels on hover and keyboard focus and `aria-current`; phones get 4 pinned tabs + a "More" sheet listing every module |
+| U9 | P1 | Shell | The dock is shown to signed-out visitors on `/`, `/privacy` and `/terms` (11 links that all bounce to login) and covers the hero scroll hint | ✅ fixed in C — module navigation exists only inside the signed-in shell (`smoke.spec.ts`) |
+| U10 | P1 | Layout | Pages pad 40–48 px at the bottom against an ≈82 px fixed dock, so last rows sit underneath it | ✅ fixed in C — every signed-in page pads by `--nav-clearance` (6 rem + safe area); Live's composer sits above the phone tab bar and home indicator |
 | U11 | P1 | Copilot | Shown only on the unsaved `/editor`. "Insert" replaces the selection; no stop; errors and the "no key configured" notice can be inserted into the document | open |
 | U12 | P1 | /research | Failed ask shows a blank answer with "0%"; failed URL ingest clears the input; citations untitled (`REF_[n]`, raw `SCORE:0.83`); "Confidence" is a heuristic presented as a metric; source status hidden; HUD cards overlap panels | open |
 | U13 | P1 | /live | Reconnects forever when the AI plane is down or auth fails; mic button does nothing via keyboard; mobile transcript buried; "Offline" label while connecting | open |
@@ -148,6 +149,12 @@ missing states · P3 = refinement.
      phones a 5-item bottom bar with a "More" sheet.
    - Live keeps its own chrome but stays inside the guard and the navigation.
    - Public pages (`/`, legal, auth) get no app dock.
+   - Workspace context: the session's `activeWorkspaceId` (a column the schema already had) is set by
+     `PUT /api/workspaces/active` (members only; any other id is a 404). Page data, `checkPermission`
+     and the JWT minted for the intelligence plane all resolve through it, falling back to the
+     personal workspace if the user is removed. Menus use the native popover API, and the phone
+     "More" sheet uses a modal `<dialog>`: dismissal, top layer and focus order come from the browser,
+     with no menu library.
 4. **Primitives** (`components/ui/`): Button / LinkButton / IconButton, Field + Input / Textarea /
    Select, Card / Panel, Badge / StatusDot, EmptyState / Notice / Skeleton / Spinner,
    PageHeader / PageContainer, Disclosure / CopyButton, ConfirmDialog on native `<dialog>`, Tabs.
@@ -194,7 +201,7 @@ missing states · P3 = refinement.
 | A | This audit | ✅ inventory, register, baseline evidence |
 | S | Security fixes S1–S9, with e2e tests for cross-workspace isolation and the redirect guard | ✅ 6 e2e + 12 unit tests; each e2e test fails on the old code and passes on the fix |
 | B | Tokens, fonts, CSS layer fixes, primitives, MotionConfig, error/not-found boundaries | ✅ `/docs` on the shared system in dark/light × desktop/mobile; typecheck, 20 unit, build and 15 e2e pass |
-| C | Route groups, app header, navigation (dock + mobile bar), workspace context, skip link | every route reachable; nothing fixed covers content |
+| C | Route groups, app header, navigation (dock + mobile bar), workspace context, skip link | ✅ all 13 signed-in routes reachable from both navs; nothing fixed covers content; 18 e2e pass (shell, phone sheet, invite → switch → JWT) |
 | D | Dashboard, docs, document detail (+ Copilot + history UX), scratchpad editor (lazy) | create → write → Copilot → save → history works |
 | E | Research, agents (+ result event, stop), vault, analytics | contracts preserved; empty/loading/error states verified |
 | F | Voice, media, Live, status, members, auth, legal | keyboard paths, mic denial, offline, reduced motion |

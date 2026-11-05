@@ -48,7 +48,7 @@ export default function EditorDemoPage() {
   const [editor, setEditor] = useState<Editor | null>(null);
 
   return (
-    <main className="relative min-h-screen bg-[#050505] text-white selection:bg-vayu-accent selection:text-black overflow-hidden px-6 py-10">
+    <div className="relative min-h-screen bg-[#050505] text-white selection:bg-vayu-accent selection:text-black overflow-hidden px-6 pt-10 pb-nav">
       {/* Background Decorative Mesh/Glow */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-vayu-accent/10 via-[#050505] to-[#050505] opacity-60"></div>
       <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.15] mix-blend-overlay pointer-events-none"></div>
@@ -129,6 +129,6 @@ export default function EditorDemoPage() {
           </p>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
