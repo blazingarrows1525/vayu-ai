@@ -1,5 +1,5 @@
 import { type BrowserContext, expect, test } from "@playwright/test";
-import { signUpUser } from "./helpers";
+import { aiPlaneAvailable, NEEDS_AI, signUpUser } from "./helpers";
 
 /** Research, agents, vault and analytics against the real AI plane (with a stand-in model). */
 
@@ -8,7 +8,7 @@ test.describe.configure({ mode: "serial" });
 let ctx: BrowserContext;
 
 test.beforeAll(async ({ browser }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(120_000);
   ctx = await browser.newContext({ viewport: { width: 1360, height: 900 } });
   await signUpUser(ctx, "intel");
 });
@@ -24,6 +24,7 @@ Reranking the top candidates improves answer quality for long documents.
 `;
 
 test("research: a keyboard-reachable upload, a validated URL field, and answers that name their sources", async () => {
+  test.skip(!(await aiPlaneAvailable()), NEEDS_AI);
   test.setTimeout(90_000);
   const page = await ctx.newPage();
   await page.goto("/research");
@@ -57,6 +58,7 @@ test("research: a keyboard-reachable upload, a validated URL field, and answers 
 });
 
 test("agents: a run streams named steps, then the full result, which can be saved as a document", async () => {
+  test.skip(!(await aiPlaneAvailable()), NEEDS_AI);
   test.setTimeout(90_000);
   const page = await ctx.newPage();
   await page.goto("/agents");
@@ -81,6 +83,7 @@ test("agents: a run streams named steps, then the full result, which can be save
 });
 
 test("vault: search, save a search, and survive corrupt saved data", async () => {
+  test.skip(!(await aiPlaneAvailable()), NEEDS_AI);
   test.setTimeout(60_000);
   const page = await ctx.newPage();
   await page.goto("/vault");

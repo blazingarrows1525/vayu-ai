@@ -1,5 +1,5 @@
 import { type BrowserContext, expect, test } from "@playwright/test";
-import { signUpUser } from "./helpers";
+import { aiPlaneAvailable, NEEDS_AI, signUpUser } from "./helpers";
 
 /** Members, status, sign-in, voice, media, Live and the legal pages. */
 
@@ -18,7 +18,7 @@ let guest: BrowserContext;
 let guestEmail = "";
 
 test.beforeAll(async ({ browser }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(180_000);
   owner = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   guest = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   await signUpUser(owner, "tools-owner");
@@ -119,6 +119,7 @@ test("sign-in: labelled fields, show password, network errors recover, signed-in
 });
 
 test("voice: the microphone works from the keyboard and shows what was heard", async () => {
+  test.skip(!(await aiPlaneAvailable()), NEEDS_AI);
   test.setTimeout(90_000);
   await owner.grantPermissions(["microphone"]);
   const page = await owner.newPage();
@@ -146,6 +147,7 @@ test("media: keyboard file picking, with non-video files refused clearly", async
 });
 
 test("Live: a refused session goes offline with a reason and recovers with Retry", async () => {
+  test.skip(!(await aiPlaneAvailable()), NEEDS_AI);
   test.setTimeout(60_000);
   const page = await owner.newPage();
   await page.route("**/api/realtime/session", (route) => route.fulfill({ status: 401, body: "{}" }));

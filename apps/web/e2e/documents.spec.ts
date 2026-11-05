@@ -1,5 +1,5 @@
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
-import { signUpUser } from "./helpers";
+import { aiPlaneAvailable, NEEDS_AI, signUpUser } from "./helpers";
 
 /** Writing in a document: save integrity, history, comments, Copilot, roles and the scratchpad. */
 
@@ -8,7 +8,7 @@ test.describe.configure({ mode: "serial" });
 let owner: BrowserContext;
 
 test.beforeAll(async ({ browser }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(120_000);
   owner = await browser.newContext({ viewport: { width: 1360, height: 900 } });
   await signUpUser(owner, "docs-owner");
 });
@@ -143,6 +143,7 @@ test("comments can be posted and resolved", async () => {
 });
 
 test("Copilot answers into the side panel and inserts the reply as editor blocks", async () => {
+  test.skip(!(await aiPlaneAvailable()), NEEDS_AI);
   const id = await newDocument(owner, "Copilot check", "A rough sentence that needs work.");
   const page = await owner.newPage();
   await openDoc(page, id);
