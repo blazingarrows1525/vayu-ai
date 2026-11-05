@@ -33,6 +33,7 @@ type ServerFrame =
 
 const HEARTBEAT_MS = 25_000;
 const MAX_BACKOFF_MS = 15_000;
+const MAX_ATTEMPTS = 5;
 
 let seq = 0;
 const nextId = () => `m${Date.now().toString(36)}${(seq++).toString(36)}`;
@@ -134,6 +135,12 @@ export function useLiveSession(handlers: {
 
     const scheduleRetry = () => {
       if (disposed) return;
+      // Bounded: after ~30 s of failures, stop and say so (with a Retry), instead of spinning forever.
+      if (attempt >= MAX_ATTEMPTS) {
+        setFatal("VAYU Live can't reach the AI service right now.");
+        setStatus("offline");
+        return;
+      }
       setStatus("reconnecting");
       const delay = Math.min(MAX_BACKOFF_MS, 1000 * 2 ** attempt);
       attempt += 1;
@@ -169,10 +176,17 @@ export function useLiveSession(handlers: {
           /* ignore a malformed frame rather than drop the session */
         }
       };
-      ws.onclose = () => {
+      ws.onclose = (event) => {
         clearInterval(heartbeat);
         if (wsRef.current !== ws) return; // superseded by a reset
         wsRef.current = null;
+        if (event.code === 1008) {
+          // The AI plane refused the login: retrying with the same session won't help.
+          setFatal("The AI service didn't accept your login for Live. Sign in again, or check Service status.");
+          setStatus("offline");
+          endTurn();
+          return;
+        }
         if (busyRef.current) {
           setMessages((list) => [
             ...list,
@@ -237,5 +251,11 @@ export function useLiveSession(handlers: {
     setGeneration((g) => g + 1);
   }, []);
 
-  return { status, caps, messages, busy, streaming, fatal, sendText, sendAudio, notice, reset };
+  /** Try connecting again after going offline; the conversation so far is kept on screen. */
+  const retry = useCallback(() => {
+    setFatal(null);
+    setGeneration((g) => g + 1);
+  }, []);
+
+  return { status, caps, messages, busy, streaming, fatal, sendText, sendAudio, notice, reset, retry };
 }

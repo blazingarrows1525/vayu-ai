@@ -217,6 +217,41 @@ def test_transcription_survives_a_failed_knowledge_base_save(client, monkeypatch
     assert client.session.rolled_back
 
 
+def test_voice_chat_returns_what_was_heard_alongside_the_reply(client, monkeypatch) -> None:
+    async def transcribe(self, audio, filename="audio.wav"):
+        return "what is hybrid search"
+
+    async def generate(settings, **_kw):
+        return "It mixes keyword and vector matching.", None
+
+    class _Safe:
+        def __init__(self, _settings):
+            pass
+
+        async def check_prompt(self, _text):
+            return type("Check", (), {"is_safe": True})()
+
+    async def no_speech(*_a, **_kw):
+        return None
+
+    monkeypatch.setattr(VoiceService, "transcribe", transcribe)
+    monkeypatch.setattr(media, "generate", generate)
+    monkeypatch.setattr(media, "SafetyService", _Safe)
+    monkeypatch.setattr(media, "_speak", no_speech)
+    res = client(gemini_api_key="g").post(
+        "/v1/media/voice",
+        files={"file": ("a.webm", b"\x1a\x45\xdf\xa3", "audio/webm")},
+        data={"action": "chat"},
+        headers=_DEV,
+    )
+    assert res.status_code == 200, res.text
+    body = res.json()
+    # `transcript` keeps carrying the reply for existing clients; `heard` is the user's words.
+    assert body["transcript"] == "It mixes keyword and vector matching."
+    assert body["heard"] == "what is hybrid search"
+    assert body["audio_url"] is None
+
+
 def test_diagnostics_requires_login() -> None:
     assert TestClient(app).get("/v1/diagnostics").status_code == 401
 

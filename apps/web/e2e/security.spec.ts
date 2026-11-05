@@ -140,7 +140,7 @@ test("email sign-in never follows an off-origin redirect", async ({ browser }) =
   const page = await ctx.newPage();
   await page.goto("/login?redirect=%2F%09%2Fexample.com");
   await page.getByLabel("Email").fill(users.a.email);
-  await page.getByLabel("Password").fill("sec-password-123");
+  await page.getByLabel("Password", { exact: true }).fill("sec-password-123");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 20_000 });
   await ctx.close();

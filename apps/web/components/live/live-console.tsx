@@ -7,6 +7,8 @@ import { AudioLines, Mic, RotateCcw, SendHorizontal, Square, Volume2, VolumeX } 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Magnetic } from "@/components/landing/magnetic";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
+import { Notice } from "@/components/ui/feedback";
 import { useLiveAudio } from "@/lib/live/use-live-audio";
 import { useLiveSession, type LiveMessage, type LiveStatus } from "@/lib/live/use-live-session";
 import type { OrbMode } from "./live-orb";
@@ -95,6 +97,7 @@ export function LiveConsole() {
     try {
       await startRecording(() => void finishTalking());
     } catch (err) {
+      setLatched(false); // a quick tap that failed to start must not leave the mic "latched"
       setMicError(err instanceof Error ? err.message : "Couldn't open the microphone.");
     }
   }, [startRecording, finishTalking]);
@@ -103,8 +106,11 @@ export function LiveConsole() {
     if (!canTalk && !recording) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     if (latched) {
-      void finishTalking(); // second tap sends
-      return;
+      if (recording) {
+        void finishTalking(); // second tap sends
+        return;
+      }
+      setLatched(false); // latched without a recording (it never started): start fresh
     }
     pressedAt.current = performance.now();
     void beginTalking();
@@ -217,11 +223,30 @@ export function LiveConsole() {
         </div>
       </header>
 
+      {session.status === "offline" && (
+        <Notice
+          tone="danger"
+          title="VAYU Live is offline"
+          className="mt-4"
+          action={
+            <Button size="sm" variant="secondary" icon={<RotateCcw aria-hidden className="h-3.5 w-3.5" />} onClick={session.retry}>
+              Retry
+            </Button>
+          }
+        >
+          {session.fatal ?? "The connection to the AI service was lost."}{" "}
+          <Link href="/status" className="font-medium underline underline-offset-2">
+            Service status
+          </Link>{" "}
+          shows which part isn&rsquo;t working.
+        </Notice>
+      )}
+
       <div className="mt-6 grid gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
         {/* ── the orb ──────────────────────────────────────────────── */}
         <section aria-label="VAYU voice core" className="flex flex-col items-center justify-center">
           {/* radial mask: the canvas edge (bloom changes its alpha) never reads as a box */}
-          <div className="relative aspect-square w-[min(100%,22rem)] [mask-image:radial-gradient(closest-side,#000_72%,transparent)] lg:w-[min(100%,34rem,calc(100dvh_-_21rem))]">
+          <div className="relative aspect-square w-[min(100%,15rem)] sm:w-[min(100%,22rem)] [mask-image:radial-gradient(closest-side,#000_72%,transparent)] lg:w-[min(100%,34rem,calc(100dvh_-_21rem))]">
             <LiveOrb mode={mode} meter={meter} onActivate={toggleFromOrb} />
           </div>
           <div className="-mt-4 flex h-8 items-center" aria-live="polite">
@@ -236,7 +261,11 @@ export function LiveConsole() {
                   mode === "idle" ? "text-shimmer" : "text-vayu-accent"
                 }`}
               >
-                {session.status === "reconnecting" ? "Reconnecting…" : MODE_LABEL[mode]}
+                {session.status === "connecting"
+                  ? "Connecting…"
+                  : session.status === "reconnecting"
+                    ? "Reconnecting…"
+                    : MODE_LABEL[mode]}
               </motion.p>
             </AnimatePresence>
           </div>
@@ -306,6 +335,7 @@ export function LiveConsole() {
             disabled={!canTalk && !recording}
             onPointerDown={onMicDown}
             onPointerUp={onMicUp}
+            onKeyboardActivate={toggleFromOrb}
           />
         </div>
         <p className="mt-2 text-center text-xs text-vayu-muted max-lg:mt-1" aria-live="polite">
@@ -380,7 +410,7 @@ function IconButton({
         whileHover={reduced ? undefined : { y: -2, scale: 1.08 }}
         whileTap={reduced ? undefined : { scale: 0.92 }}
         transition={{ type: "spring", stiffness: 450, damping: 20 }}
-        className={`glass grid h-9 w-9 place-items-center rounded-xl transition-[color,box-shadow] duration-300 hover:text-vayu-accent hover:shadow-[0_0_22px_-4px_var(--color-vayu-accent)] disabled:cursor-not-allowed disabled:opacity-40 ${
+        className={`glass grid h-9 w-9 place-items-center rounded-xl transition-[color,box-shadow] duration-300 hover:text-vayu-accent hover:shadow-[0_0_22px_-4px_var(--color-vayu-accent)] aria-disabled:cursor-not-allowed aria-disabled:opacity-40 ${
           active ? "text-vayu-accent" : "text-vayu-muted"
         }`}
       >
@@ -396,12 +426,15 @@ function MicButton({
   disabled,
   onPointerDown,
   onPointerUp,
+  onKeyboardActivate,
 }: {
   recording: boolean;
   latched: boolean;
   disabled: boolean;
   onPointerDown: (e: React.PointerEvent) => void;
   onPointerUp: () => void;
+  /** Enter/Space on the focused button: start (tap-to-talk) or stop and send. */
+  onKeyboardActivate: () => void;
 }) {
   const reduced = useReducedMotion();
   return (
@@ -410,10 +443,14 @@ function MicButton({
         type="button"
         aria-label={recording ? "Stop and send" : "Talk to VAYU"}
         aria-pressed={recording}
-        disabled={disabled}
+        // aria-disabled keeps keyboard focus on the mic while a reply is on its way
+        aria-disabled={disabled || undefined}
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onClick={(e) => {
+          if (e.detail === 0) onKeyboardActivate(); // pointer presses are handled above
+        }}
         onContextMenu={(e) => e.preventDefault()}
         whileHover={reduced || disabled ? undefined : { scale: 1.1, y: -3 }}
         whileTap={reduced || disabled ? undefined : { scale: 0.94 }}

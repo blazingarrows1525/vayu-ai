@@ -7,7 +7,8 @@ import { getServiceToken } from "./ai";
  * concrete fix. Never exposes secrets — only hosts, provider names and short errors.
  */
 
-export type CheckStatus = "ok" | "warn" | "fail";
+/** `skip`: not checked because an earlier check it depends on failed (not a problem of its own). */
+export type CheckStatus = "ok" | "warn" | "fail" | "skip";
 export interface Check {
   id: string;
   label: string;
@@ -93,8 +94,8 @@ export async function runDiagnostics(): Promise<{ site: string; checks: Check[] 
   const blocked = (id: string, label: string, by: string): Check => ({
     id,
     label,
-    status: "fail",
-    detail: `Not checked — fix “${by}” first.`,
+    status: "skip",
+    detail: `Not checked yet: fix “${by}” first.`,
   });
 
   // ── web → AI wiring ───────────────────────────────────────────────
