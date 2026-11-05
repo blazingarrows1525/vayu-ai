@@ -35,9 +35,7 @@ test("session survives a reload (cookie persists)", async ({ page }) => {
 test("authenticated user can open the research center and VAYU Live", async ({ page }) => {
   await signUp(page);
   await page.goto("/research");
-  await expect(
-    page.getByRole("heading", { name: /research center/i }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Research" })).toBeVisible();
 
   // VAYU Live: the BFF mints a short-lived JWT + the AI plane's WebSocket URL.
   const res = await page.request.get("/api/realtime/session");
