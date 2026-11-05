@@ -26,8 +26,11 @@ export async function POST(req: Request) {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "content-type": "application/json" },
       body: JSON.stringify(body),
+      // Stop in the UI aborts the browser request; pass that on so the AI plane stops generating.
+      signal: req.signal,
     });
   } catch {
+    if (req.signal.aborted) return new Response(null, { status: 499 });
     return Response.json({ error: aiFailureMessage(null) }, { status: 502 });
   }
   if (!upstream.ok || !upstream.body) {

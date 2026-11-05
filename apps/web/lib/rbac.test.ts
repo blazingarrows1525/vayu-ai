@@ -1,5 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { ROLE_RANK, can, hasRole } from "./rbac";
+import {
+  ROLE_RANK,
+  can,
+  canAssignRole,
+  canManageMember,
+  hasRole,
+  isAssignableRole,
+} from "./rbac";
+
+describe("membership policy", () => {
+  it("never accepts owner or unknown values as an assignable role", () => {
+    expect(isAssignableRole("admin")).toBe(true);
+    expect(isAssignableRole("viewer")).toBe(true);
+    expect(isAssignableRole("owner")).toBe(false);
+    expect(isAssignableRole("superuser")).toBe(false);
+    expect(isAssignableRole(undefined)).toBe(false);
+  });
+
+  it("only grants roles strictly below the actor's own", () => {
+    expect(canAssignRole("owner", "admin")).toBe(true);
+    expect(canAssignRole("admin", "editor")).toBe(true);
+    expect(canAssignRole("admin", "admin")).toBe(false);
+    expect(canAssignRole("admin", "owner")).toBe(false);
+  });
+
+  it("protects equal and higher ranks, so the owner can't be demoted or removed", () => {
+    expect(canManageMember("owner", "admin")).toBe(true);
+    expect(canManageMember("admin", "editor")).toBe(true);
+    expect(canManageMember("admin", "admin")).toBe(false);
+    expect(canManageMember("admin", "owner")).toBe(false);
+    expect(canManageMember("owner", "owner")).toBe(false);
+  });
+});
 
 describe("rbac", () => {
   it("orders roles owner > admin > editor > viewer", () => {

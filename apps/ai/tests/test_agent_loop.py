@@ -185,3 +185,28 @@ async def test_anthropic_chat_ignores_truncated_tool_use() -> None:
     ])
     turn = await provider.chat(messages=[{"role": "user", "content": "x"}], tools=get_tools_dict())
     assert turn.tool_calls is None
+
+
+async def test_stream_ends_with_the_full_untruncated_result(monkeypatch) -> None:
+    long_answer = "word " * 400  # 2,000 chars: step previews are cut at 800
+    monkeypatch.setattr(runner, "_provider", lambda _s: _ScriptedProvider([ChatTurn(long_answer, _USAGE)]))
+    frames = [f async for f in runner.stream_run(Settings(_env_file=None), agent_type="research", task="x")]
+    step = next(f for f in frames if f.startswith("event: step"))
+    assert len(json.loads(step.split("data: ", 1)[1])["output"]) == 800
+    result = next(f for f in frames if f.startswith("event: result"))
+    payload = json.loads(result.split("data: ", 1)[1])
+    assert payload == {"status": "completed", "output": long_answer}
+    assert frames.index(result) == len(frames) - 2 and frames[-1].startswith("event: done")
+
+
+async def test_stream_result_reports_step_limit(monkeypatch) -> None:
+    monkeypatch.setattr(runner, "_provider", lambda _s: _ScriptedProvider([_calc_call()]))
+    frames = [f async for f in runner.stream_run(Settings(_env_file=None), agent_type="research", task="x")]
+    result = json.loads(next(f for f in frames if f.startswith("event: result")).split("data: ", 1)[1])
+    assert result["status"] == "limited" and f"Stopped after {MAX_TOOL_ROUNDS}" in result["output"]
+
+
+async def test_stream_has_no_result_after_a_failure(monkeypatch) -> None:
+    monkeypatch.setattr(runner, "_provider", lambda _settings: _ExplodingProvider())
+    frames = [f async for f in runner.stream_run(Settings(_env_file=None), agent_type="research", task="x")]
+    assert not any(f.startswith("event: result") for f in frames)

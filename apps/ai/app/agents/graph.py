@@ -18,6 +18,10 @@ from app.services.llm import LLMUnavailable
 MAX_TOOL_ROUNDS = 6
 
 
+# Output of a run that never reached a model (no provider configured / all failed).
+UNAVAILABLE = "LLM Unavailable"
+
+
 class AgentState(TypedDict, total=False):
     task: str
     messages: Annotated[list[dict], operator.add]
@@ -53,14 +57,14 @@ def build_agent_graph(provider: Any, config: AgentConfig):
                     "steps": [{"node": "agent", "type": "llm", "output": text, "tokens": usage.input_tokens + usage.output_tokens}],
                 }
             except LLMUnavailable:
-                return {"output": "LLM Unavailable"}
+                return {"output": UNAVAILABLE}
 
         try:
             turn = await provider.chat(
                 messages=msgs, tools=get_tools_dict(), max_tokens=2048
             )
         except LLMUnavailable:
-            return {"output": "LLM Unavailable"}
+            return {"output": UNAVAILABLE}
 
         assistant_msg: dict[str, Any] = {"role": "assistant", "content": turn.text or ""}
         if turn.tool_calls:

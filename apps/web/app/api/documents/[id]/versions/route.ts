@@ -1,4 +1,4 @@
-import { createVersion, listVersions } from "@/lib/data";
+import { createVersion, getDocument, listVersions } from "@/lib/data";
 import { checkPermission } from "@/lib/session";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -7,6 +7,9 @@ export async function GET(_req: Request, { params }: Ctx) {
   const ctx = await checkPermission("document:read");
   if (!ctx.ok) return Response.json({ error: "forbidden" }, { status: ctx.status });
   const { id } = await params;
+  if (!(await getDocument(id, ctx.workspaceId))) {
+    return Response.json({ error: "not found" }, { status: 404 });
+  }
   return Response.json({ versions: await listVersions(id) });
 }
 

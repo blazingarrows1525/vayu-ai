@@ -8,13 +8,13 @@ const container: Variants = {
   show: { transition: { staggerChildren: 0.055, delayChildren: 0.15 } },
 };
 
+// Words start visible and only rise into place: an opacity or blur reveal would keep the
+// headline (the page's largest paint) blank until JavaScript runs.
 const word: Variants = {
-  hidden: { y: "110%", rotateX: -38, opacity: 0, filter: "blur(6px)" },
+  hidden: { y: "32%", rotateX: -24 },
   show: {
     y: "0%",
     rotateX: 0,
-    opacity: 1,
-    filter: "blur(0px)",
     transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
   },
 };

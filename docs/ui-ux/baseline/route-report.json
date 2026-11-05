@@ -1,0 +1,1224 @@
+[
+ {
+  "route": "/",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/",
+  "overflowX": 0,
+  "height": 6612,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Intelligence at the speed of thought.\nIntelligence at the speed of thought."
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "landing__desktop__dark.png"
+ },
+ {
+  "route": "/",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/",
+  "overflowX": 0,
+  "height": 6612,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Intelligence at the speed of thought.\nIntelligence at the speed of thought."
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "landing__desktop__light.png"
+ },
+ {
+  "route": "/",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/",
+  "overflowX": 0,
+  "height": 8026,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Intelligence at the speed of thought.\nIntelligence at the speed of thought."
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "landing__mobile__dark.png"
+ },
+ {
+  "route": "/",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/",
+  "overflowX": 0,
+  "height": 8026,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Intelligence at the speed of thought.\nIntelligence at the speed of thought."
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "landing__mobile__light.png"
+ },
+ {
+  "route": "/login",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/login",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Welcome back"
+  ],
+  "fixed": [],
+  "errors": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "file": "login__desktop__dark.png"
+ },
+ {
+  "route": "/login",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/login",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Welcome back"
+  ],
+  "fixed": [],
+  "errors": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "file": "login__desktop__light.png"
+ },
+ {
+  "route": "/login",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/login",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Welcome back"
+  ],
+  "fixed": [],
+  "errors": [],
+  "file": "login__mobile__dark.png"
+ },
+ {
+  "route": "/login",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/login",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Welcome back"
+  ],
+  "fixed": [],
+  "errors": [],
+  "file": "login__mobile__light.png"
+ },
+ {
+  "route": "/dashboard",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/dashboard",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Command center"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "dashboard__desktop__dark.png"
+ },
+ {
+  "route": "/dashboard",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/dashboard",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Command center"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "dashboard__desktop__light.png"
+ },
+ {
+  "route": "/dashboard",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/dashboard",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Command center"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "dashboard__mobile__dark.png"
+ },
+ {
+  "route": "/dashboard",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/dashboard",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Command center"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "dashboard__mobile__light.png"
+ },
+ {
+  "route": "/editor",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/editor",
+  "overflowX": 0,
+  "height": 947,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Editor"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "file": "editor__desktop__dark.png"
+ },
+ {
+  "route": "/editor",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/editor",
+  "overflowX": 0,
+  "height": 947,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Editor"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "file": "editor__desktop__light.png"
+ },
+ {
+  "route": "/editor",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/editor",
+  "overflowX": 0,
+  "height": 1056,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Editor"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "file": "editor__mobile__dark.png"
+ },
+ {
+  "route": "/editor",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/editor",
+  "overflowX": 0,
+  "height": 1056,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Editor"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "file": "editor__mobile__light.png"
+ },
+ {
+  "route": "/docs",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/docs",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Documents"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "docs__desktop__dark.png"
+ },
+ {
+  "route": "/docs",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/docs",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Documents"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "docs__desktop__light.png"
+ },
+ {
+  "route": "/docs",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/docs",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Documents"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "docs__mobile__dark.png"
+ },
+ {
+  "route": "/docs",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/docs",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Documents"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "docs__mobile__light.png"
+ },
+ {
+  "route": "/docs/799f8bca-b580-4399-915f-6de82fffa8b0",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/docs/799f8bca-b580-4399-915f-6de82fffa8b0",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "docs-detail__desktop__dark.png"
+ },
+ {
+  "route": "/docs/799f8bca-b580-4399-915f-6de82fffa8b0",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/docs/799f8bca-b580-4399-915f-6de82fffa8b0",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "docs-detail__desktop__light.png"
+ },
+ {
+  "route": "/docs/799f8bca-b580-4399-915f-6de82fffa8b0",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/docs/799f8bca-b580-4399-915f-6de82fffa8b0",
+  "overflowX": 0,
+  "height": 910,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "docs-detail__mobile__dark.png"
+ },
+ {
+  "route": "/docs/799f8bca-b580-4399-915f-6de82fffa8b0",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/docs/799f8bca-b580-4399-915f-6de82fffa8b0",
+  "overflowX": 0,
+  "height": 910,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "docs-detail__mobile__light.png"
+ },
+ {
+  "route": "/research",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/research",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Research Center"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "file": "research__desktop__dark.png"
+ },
+ {
+  "route": "/research",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/research",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Research Center"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "file": "research__desktop__light.png"
+ },
+ {
+  "route": "/research",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/research",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Research Center"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "file": "research__mobile__dark.png"
+ },
+ {
+  "route": "/research",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/research",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Research Center"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "file": "research__mobile__light.png"
+ },
+ {
+  "route": "/agents",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/agents",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Agent Command Center"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "agents__desktop__dark.png"
+ },
+ {
+  "route": "/agents",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/agents",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Agent Command Center"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "agents__desktop__light.png"
+ },
+ {
+  "route": "/agents",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/agents",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Agent Command Center"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "agents__mobile__dark.png"
+ },
+ {
+  "route": "/agents",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/agents",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Agent Command Center"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "agents__mobile__light.png"
+ },
+ {
+  "route": "/vault",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/vault",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Knowledge Vault"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "vault__desktop__dark.png"
+ },
+ {
+  "route": "/vault",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/vault",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Knowledge Vault"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "vault__desktop__light.png"
+ },
+ {
+  "route": "/vault",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/vault",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Knowledge Vault"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "vault__mobile__dark.png"
+ },
+ {
+  "route": "/vault",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/vault",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Knowledge Vault"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "vault__mobile__light.png"
+ },
+ {
+  "route": "/analytics",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/analytics",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Analytics"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "analytics__desktop__dark.png"
+ },
+ {
+  "route": "/analytics",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/analytics",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Analytics"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "analytics__desktop__light.png"
+ },
+ {
+  "route": "/analytics",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/analytics",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Analytics"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "analytics__mobile__dark.png"
+ },
+ {
+  "route": "/analytics",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/analytics",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Analytics"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "analytics__mobile__light.png"
+ },
+ {
+  "route": "/voice",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/voice",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "NVIDIA Voice Assistant"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "voice__desktop__dark.png"
+ },
+ {
+  "route": "/voice",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/voice",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "NVIDIA Voice Assistant"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "voice__desktop__light.png"
+ },
+ {
+  "route": "/voice",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/voice",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "NVIDIA Voice Assistant"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "voice__mobile__dark.png"
+ },
+ {
+  "route": "/voice",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/voice",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "NVIDIA Voice Assistant"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "voice__mobile__light.png"
+ },
+ {
+  "route": "/media",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/media",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "media__desktop__dark.png"
+ },
+ {
+  "route": "/media",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/media",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "media__desktop__light.png"
+ },
+ {
+  "route": "/media",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/media",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "media__mobile__dark.png"
+ },
+ {
+  "route": "/media",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/media",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "media__mobile__light.png"
+ },
+ {
+  "route": "/live",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/live",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU Live — realtime voice & chat",
+  "h1": [
+   "Live"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "live__desktop__dark.png"
+ },
+ {
+  "route": "/live",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/live",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU Live — realtime voice & chat",
+  "h1": [
+   "Live"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "live__desktop__light.png"
+ },
+ {
+  "route": "/live",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/live",
+  "overflowX": 0,
+  "height": 1106,
+  "title": "VAYU Live — realtime voice & chat",
+  "h1": [
+   "Live"
+  ],
+  "fixed": [
+   "div[650,110]",
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "live__mobile__dark.png"
+ },
+ {
+  "route": "/live",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/live",
+  "overflowX": 0,
+  "height": 1106,
+  "title": "VAYU Live — realtime voice & chat",
+  "h1": [
+   "Live"
+  ],
+  "fixed": [
+   "div[650,110]",
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "live__mobile__light.png"
+ },
+ {
+  "route": "/status",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/status",
+  "overflowX": 0,
+  "height": 1390,
+  "title": "VAYU — System status",
+  "h1": [
+   "System status"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "status__desktop__dark.png"
+ },
+ {
+  "route": "/status",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/status",
+  "overflowX": 0,
+  "height": 1390,
+  "title": "VAYU — System status",
+  "h1": [
+   "System status"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "status__desktop__light.png"
+ },
+ {
+  "route": "/status",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/status",
+  "overflowX": 0,
+  "height": 1482,
+  "title": "VAYU — System status",
+  "h1": [
+   "System status"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "status__mobile__dark.png"
+ },
+ {
+  "route": "/status",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/status",
+  "overflowX": 0,
+  "height": 1482,
+  "title": "VAYU — System status",
+  "h1": [
+   "System status"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "status__mobile__light.png"
+ },
+ {
+  "route": "/settings/members",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/settings/members",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Workspace members"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "settings-members__desktop__dark.png"
+ },
+ {
+  "route": "/settings/members",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/settings/members",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Workspace members"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "settings-members__desktop__light.png"
+ },
+ {
+  "route": "/settings/members",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/settings/members",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Workspace members"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "settings-members__mobile__dark.png"
+ },
+ {
+  "route": "/settings/members",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/settings/members",
+  "overflowX": 0,
+  "height": 844,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Workspace members"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "settings-members__mobile__light.png"
+ },
+ {
+  "route": "/privacy",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/privacy",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Privacy Policy"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "privacy__desktop__dark.png"
+ },
+ {
+  "route": "/privacy",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/privacy",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Privacy Policy"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "privacy__desktop__light.png"
+ },
+ {
+  "route": "/privacy",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/privacy",
+  "overflowX": 0,
+  "height": 1148,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Privacy Policy"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "privacy__mobile__dark.png"
+ },
+ {
+  "route": "/privacy",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/privacy",
+  "overflowX": 0,
+  "height": 1148,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Privacy Policy"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "privacy__mobile__light.png"
+ },
+ {
+  "route": "/terms",
+  "vp": "desktop",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/terms",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Terms of Service"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "terms__desktop__dark.png"
+ },
+ {
+  "route": "/terms",
+  "vp": "desktop",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/terms",
+  "overflowX": 0,
+  "height": 900,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Terms of Service"
+  ],
+  "fixed": [
+   "nav[818,62]"
+  ],
+  "errors": [],
+  "file": "terms__desktop__light.png"
+ },
+ {
+  "route": "/terms",
+  "vp": "mobile",
+  "theme": "dark",
+  "status": 200,
+  "finalUrl": "/terms",
+  "overflowX": 0,
+  "height": 1096,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Terms of Service"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "terms__mobile__dark.png"
+ },
+ {
+  "route": "/terms",
+  "vp": "mobile",
+  "theme": "light",
+  "status": 200,
+  "finalUrl": "/terms",
+  "overflowX": 0,
+  "height": 1096,
+  "title": "VAYU AI — Intelligence at the speed of thought.",
+  "h1": [
+   "Terms of Service"
+  ],
+  "fixed": [
+   "nav[762,62]"
+  ],
+  "errors": [],
+  "file": "terms__mobile__light.png"
+ }
+]

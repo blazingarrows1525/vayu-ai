@@ -17,13 +17,19 @@ export async function requireSession() {
   return session;
 }
 
+/** The workspace this session acts within: the one chosen with the workspace switcher if the
+ *  user is still a member of it, otherwise their first (personal) workspace. */
+function activeWorkspaceOf(session: NonNullable<Awaited<ReturnType<typeof getSession>>>) {
+  return resolveTokenWorkspace(session.user.id, session.session.activeWorkspaceId ?? null);
+}
+
 /** The active workspace + role for the current user, or null. */
 export async function getActiveMembership(): Promise<
   { workspaceId: string; role: Role } | null
 > {
   const session = await getSession();
   if (!session) return null;
-  return resolveTokenWorkspace(session.user.id, null);
+  return activeWorkspaceOf(session);
 }
 
 type PermissionCheck =
@@ -36,7 +42,7 @@ export async function checkPermission(
 ): Promise<PermissionCheck> {
   const session = await getSession();
   if (!session) return { ok: false, status: 401 };
-  const m = await resolveTokenWorkspace(session.user.id, null);
+  const m = await activeWorkspaceOf(session);
   if (!m || !can(m.role, permission)) return { ok: false, status: 403 };
   return { ok: true, userId: session.user.id, workspaceId: m.workspaceId, role: m.role };
 }

@@ -1,14 +1,21 @@
-"use client";
+import type { Metadata } from "next";
+import { VideoSummarizer } from "@/components/media/video-summarizer";
+import { PageContainer, PageHeader } from "@/components/ui/page";
+import { can } from "@/lib/rbac";
+import { getActiveMembership } from "@/lib/session";
 
-import { VideoWorkspace } from "@/components/media/VideoWorkspace";
+export const metadata: Metadata = { title: "Media" };
 
-export default function MediaPage() {
+export default async function MediaPage() {
+  const membership = await getActiveMembership();
   return (
-    <main className="relative min-h-screen bg-[#050505] text-white overflow-hidden px-6 py-10 flex flex-col items-center justify-center">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-[#050505] to-[#050505] opacity-60 pointer-events-none"></div>
-      <div className="relative z-10 w-full max-w-5xl mx-auto flex flex-col items-center gap-12">
-        <VideoWorkspace />
-      </div>
-    </main>
+    <PageContainer size="narrow">
+      <PageHeader
+        eyebrow="Voice & media"
+        title="Media"
+        description="Upload a short video and VAYU writes a summary of what happens in it. When the knowledge base is available, the summary is also added to this workspace's research sources."
+      />
+      <VideoSummarizer canSave={can(membership?.role, "document:write")} />
+    </PageContainer>
   );
 }

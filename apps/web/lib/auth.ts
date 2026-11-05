@@ -72,6 +72,13 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
   },
+  session: {
+    // The workspace this session acts within (set by PUT /api/workspaces/active). Read by
+    // getActiveMembership/checkPermission and stamped into the intelligence-plane JWT.
+    additionalFields: {
+      activeWorkspaceId: { type: "string", required: false, input: false },
+    },
+  },
   account: {
     // Same email via Google and GitHub → one user, instead of an "account_not_linked" error.
     accountLinking: { enabled: true, trustedProviders: ["google", "github"] },
@@ -125,8 +132,8 @@ export const auth = betterAuth({
         expirationTime: "15m",
         // Stamp tenant context into the token so the AI plane can enforce RBAC
         // statelessly. `sub` is set to user.id automatically.
-        definePayload: async ({ user: u }) => {
-          const ws = await resolveTokenWorkspace(u.id, null);
+        definePayload: async ({ user: u, session: s }) => {
+          const ws = await resolveTokenWorkspace(u.id, (s.activeWorkspaceId as string | null | undefined) ?? null);
           return {
             email: u.email,
             name: u.name,

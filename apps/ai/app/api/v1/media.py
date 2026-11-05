@@ -29,8 +29,11 @@ _VOICE_SYSTEM = "You are a helpful voice assistant. Keep your answers concise, 1
 
 
 class VoiceResponse(BaseModel):
+    # In "chat" mode `transcript` carries the reply (kept for existing clients) and `heard` what
+    # the user said; in "transcribe" mode `transcript` is the transcription and `heard` is unset.
     transcript: str
     audio_url: str | None = None
+    heard: str | None = None
 
 
 class VideoResponse(BaseModel):
@@ -110,7 +113,7 @@ async def process_voice(
     if action == "chat":
         if not transcript.strip():
             msg = "I didn't catch that — please try again."
-            return VoiceResponse(transcript=msg, audio_url=await _speak(voice_service, msg))
+            return VoiceResponse(transcript=msg, audio_url=await _speak(voice_service, msg), heard="")
 
         safety_service = SafetyService(settings)
 
@@ -118,7 +121,7 @@ async def process_voice(
         safety_check = await safety_service.check_prompt(transcript)
         if not safety_check.is_safe:
             msg = "I'm sorry, I cannot fulfill that request."
-            return VoiceResponse(transcript=msg, audio_url=await _speak(voice_service, msg))
+            return VoiceResponse(transcript=msg, audio_url=await _speak(voice_service, msg), heard=transcript)
 
         # Generate response
         try:
@@ -134,9 +137,9 @@ async def process_voice(
         out_safety_check = await safety_service.check_prompt(resp)
         if not out_safety_check.is_safe:
             msg = "I generated a response, but it was flagged as unsafe."
-            return VoiceResponse(transcript=msg, audio_url=await _speak(voice_service, msg))
+            return VoiceResponse(transcript=msg, audio_url=await _speak(voice_service, msg), heard=transcript)
 
-        return VoiceResponse(transcript=resp, audio_url=await _speak(voice_service, resp))
+        return VoiceResponse(transcript=resp, audio_url=await _speak(voice_service, resp), heard=transcript)
 
     return VoiceResponse(transcript=transcript)
 

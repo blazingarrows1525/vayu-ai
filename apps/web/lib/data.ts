@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   aiGeneration,
   comment,
@@ -12,6 +12,7 @@ import {
   type Role,
   user,
 } from "@vayu/db";
+import { extractText } from "./doc-text";
 
 /* ------------------------------- documents ------------------------------- */
 
@@ -52,15 +53,31 @@ export async function getDocument(id: string, workspaceId: string) {
   return row ?? null;
 }
 
+export interface DocumentPatch {
+  title?: unknown;
+  content?: unknown;
+  contentText?: unknown;
+}
+
+/** Update only the editable fields (never workspace, author, archive or version columns).
+ *  Returns false when no document with that id exists in the workspace. */
 export async function updateDocument(
   id: string,
   workspaceId: string,
-  patch: { title?: string; content?: Record<string, unknown>; contentText?: string },
-) {
-  await db
+  patch: DocumentPatch,
+): Promise<boolean> {
+  const set: Partial<typeof document.$inferInsert> = { updatedAt: new Date() };
+  if (typeof patch.title === "string") set.title = patch.title.trim().slice(0, 300) || "Untitled";
+  if (patch.content && typeof patch.content === "object" && !Array.isArray(patch.content)) {
+    set.content = patch.content as Record<string, unknown>;
+  }
+  if (typeof patch.contentText === "string") set.contentText = patch.contentText;
+  const rows = await db
     .update(document)
-    .set({ ...patch, updatedAt: new Date() })
-    .where(and(eq(document.id, id), eq(document.workspaceId, workspaceId)));
+    .set(set)
+    .where(and(eq(document.id, id), eq(document.workspaceId, workspaceId)))
+    .returning({ id: document.id });
+  return rows.length > 0;
 }
 
 /* -------------------------------- comments -------------------------------- */
@@ -105,11 +122,28 @@ export async function createComment(
   return row;
 }
 
-export async function setCommentResolved(id: string, resolved: boolean) {
-  await db
+/** Resolve/reopen a comment of `documentId`; false when it doesn't belong to that document. */
+export async function setCommentResolved(
+  id: string,
+  documentId: string,
+  resolved: boolean,
+): Promise<boolean> {
+  const rows = await db
     .update(comment)
     .set({ resolved, updatedAt: new Date() })
-    .where(eq(comment.id, id));
+    .where(and(eq(comment.id, id), eq(comment.documentId, documentId)))
+    .returning({ id: comment.id });
+  return rows.length > 0;
+}
+
+/** The subset of `userIds` that are members of the workspace (mentions can't reach outsiders). */
+export async function filterMemberIds(workspaceId: string, userIds: string[]) {
+  if (userIds.length === 0) return [];
+  const rows = await db
+    .select({ userId: membership.userId })
+    .from(membership)
+    .where(and(eq(membership.workspaceId, workspaceId), inArray(membership.userId, userIds)));
+  return rows.map((r) => r.userId);
 }
 
 /* -------------------------------- members --------------------------------- */
@@ -127,6 +161,15 @@ export async function listMembers(workspaceId: string) {
     .where(eq(membership.workspaceId, workspaceId));
 }
 
+export async function getMemberRole(workspaceId: string, userId: string): Promise<Role | null> {
+  const [row] = await db
+    .select({ role: membership.role })
+    .from(membership)
+    .where(and(eq(membership.workspaceId, workspaceId), eq(membership.userId, userId)))
+    .limit(1);
+  return row?.role ?? null;
+}
+
 export async function inviteMember(
   workspaceId: string,
   email: string,
@@ -136,7 +179,7 @@ export async function inviteMember(
   const [found] = await db
     .select({ id: user.id })
     .from(user)
-    .where(eq(user.email, email))
+    .where(eq(user.email, email.trim().toLowerCase()))
     .limit(1);
   if (!found) return { ok: false as const, reason: "no_such_user" };
 
@@ -187,25 +230,29 @@ export async function removeMember(workspaceId: string, userId: string) {
 
 /* --------------------------- versions + analytics ------------------------- */
 
+/** Snapshot the document's saved content. The version number is claimed with one atomic
+ *  increment, so concurrent snapshots (a double-click) can't collide on the unique key. */
 export async function createVersion(
   documentId: string,
   workspaceId: string,
   userId: string,
+  summary?: string,
 ) {
-  const doc = await getDocument(documentId, workspaceId);
-  if (!doc) return null;
+  const [claimed] = await db
+    .update(document)
+    .set({ currentVersion: sql`${document.currentVersion} + 1` })
+    .where(and(eq(document.id, documentId), eq(document.workspaceId, workspaceId)))
+    .returning({ version: sql<number>`${document.currentVersion} - 1`, content: document.content });
+  if (!claimed) return null;
+  const version = Number(claimed.version);
   await db.insert(documentVersion).values({
     documentId,
-    version: doc.currentVersion,
-    content: doc.content,
-    summary: `Snapshot v${doc.currentVersion}`,
+    version,
+    content: claimed.content,
+    summary: summary ?? `Snapshot v${version}`,
     createdBy: userId,
   });
-  await db
-    .update(document)
-    .set({ currentVersion: doc.currentVersion + 1 })
-    .where(eq(document.id, documentId));
-  return { version: doc.currentVersion };
+  return { version };
 }
 
 export async function listVersions(documentId: string) {
@@ -221,11 +268,15 @@ export async function listVersions(documentId: string) {
     .limit(100);
 }
 
+/** Restore a snapshot of a document in the caller's workspace. The current saved content is
+ *  snapshotted first, so a restore never destroys work. */
 export async function restoreVersion(
   documentId: string,
   workspaceId: string,
+  userId: string,
   version: number,
 ) {
+  if (!(await getDocument(documentId, workspaceId))) return null;
   const [snapshot] = await db
     .select({ content: documentVersion.content })
     .from(documentVersion)
@@ -237,11 +288,16 @@ export async function restoreVersion(
     )
     .limit(1);
   if (!snapshot) return null;
+  const backup = await createVersion(documentId, workspaceId, userId, `Before restoring v${version}`);
   await db
     .update(document)
-    .set({ content: snapshot.content, updatedAt: new Date() })
+    .set({
+      content: snapshot.content,
+      contentText: extractText(snapshot.content),
+      updatedAt: new Date(),
+    })
     .where(and(eq(document.id, documentId), eq(document.workspaceId, workspaceId)));
-  return { content: snapshot.content };
+  return { content: snapshot.content, backupVersion: backup?.version ?? null };
 }
 
 /* ------------------------------ conversations ----------------------------- */
@@ -283,11 +339,18 @@ export async function listConversations(workspaceId: string, userId: string) {
     .limit(100);
 }
 
-export async function getConversation(id: string, workspaceId: string) {
+/** A conversation belongs to one user: colleagues in the same workspace can't read it. */
+export async function getConversation(id: string, workspaceId: string, userId: string) {
   const [row] = await db
     .select()
     .from(conversation)
-    .where(and(eq(conversation.id, id), eq(conversation.workspaceId, workspaceId)))
+    .where(
+      and(
+        eq(conversation.id, id),
+        eq(conversation.workspaceId, workspaceId),
+        eq(conversation.userId, userId),
+      ),
+    )
     .limit(1);
   return row ?? null;
 }

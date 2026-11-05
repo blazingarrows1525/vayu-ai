@@ -1,22 +1,27 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { CircleAlert, CircleCheck, CircleDashed, RefreshCw, TriangleAlert } from "lucide-react";
+import { Badge, type Tone } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
+import { Disclosure } from "@/components/ui/disclosure";
+import { Loading, Notice, Skeleton } from "@/components/ui/feedback";
+import { cn } from "@/lib/cn";
 import type { Check, CheckStatus } from "@/lib/diagnostics";
+import { plural } from "@/lib/format";
 
-interface Result {
-  site: string;
-  checks: Check[];
-  checkedAt: string;
-}
+type Result = { site: string; checks: Check[]; checkedAt: string };
 
-const STYLE: Record<CheckStatus, { icon: string; ring: string; text: string }> = {
-  ok: { icon: "✓", ring: "border-emerald-500/40 bg-emerald-500/10", text: "text-emerald-500" },
-  warn: { icon: "!", ring: "border-amber-500/40 bg-amber-500/10", text: "text-amber-500" },
-  fail: { icon: "✕", ring: "border-red-500/40 bg-red-500/10", text: "text-red-500" },
+const LOOK: Record<CheckStatus, { tone: Tone; label: string; Icon: typeof CircleCheck; text: string }> = {
+  ok: { tone: "success", label: "Working", Icon: CircleCheck, text: "text-vayu-success" },
+  warn: { tone: "warning", label: "Limited", Icon: TriangleAlert, text: "text-vayu-warning" },
+  fail: { tone: "danger", label: "Problem", Icon: CircleAlert, text: "text-vayu-danger" },
+  skip: { tone: "neutral", label: "Not checked", Icon: CircleDashed, text: "text-vayu-subtle" },
 };
 
-/** Runs /api/diagnostics and lists every hop an AI feature needs, with the fix for each. */
-export function StatusBoard() {
+/** Runs /api/diagnostics: every hop an AI feature depends on, in order, with the fix for each. */
+export function StatusBoard({ canFix }: { canFix: boolean }) {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
@@ -26,10 +31,14 @@ export function StatusBoard() {
     setError(null);
     try {
       const res = await fetch("/api/diagnostics", { cache: "no-store" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new Error(String(res.status));
       setResult((await res.json()) as Result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(
+        err instanceof Error && /^\d+$/.test(err.message)
+          ? `The checks couldn't run (error ${err.message}).`
+          : "The checks couldn't run. Check your connection and try again.",
+      );
     } finally {
       setRunning(false);
     }
@@ -39,71 +48,82 @@ export function StatusBoard() {
     void run();
   }, [run]);
 
-  const failures = result?.checks.filter((c) => c.status === "fail").length ?? 0;
+  const count = (s: CheckStatus) => result?.checks.filter((c) => c.status === s).length ?? 0;
+  const failures = count("fail");
+  const limited = count("warn");
+  const skipped = count("skip");
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-6 pb-32 pt-12">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-vayu-accent">VAYU AI</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">System status</h1>
-          <p className="mt-2 text-sm text-vayu-muted">
-            Checks every piece the AI features depend on and says exactly what to change.
-          </p>
-        </div>
-        <button
-          onClick={() => void run()}
-          disabled={running}
-          className="rounded-xl bg-vayu-accent px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90 disabled:opacity-60"
-        >
-          {running ? "Checking…" : "Run again"}
-        </button>
-      </header>
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p role="status" className={cn("text-sm font-semibold", !result ? "text-vayu-muted" : failures ? "text-vayu-danger" : limited ? "text-vayu-warning" : "text-vayu-success")}>
+          {!result
+            ? running
+              ? "Checking…"
+              : ""
+            : failures
+              ? `${plural(failures, "problem")} to fix${skipped ? ` · ${skipped} not checked until then` : ""}`
+              : limited
+                ? `Working, with ${plural(limited, "limitation")}`
+                : "Everything is working."}
+        </p>
+        <Button variant="secondary" icon={<RefreshCw aria-hidden className="h-4 w-4" />} loading={running} loadingLabel="Checking…" onClick={() => void run()}>
+          Run again
+        </Button>
+      </div>
+
+      {error && <Notice tone="danger">{error}</Notice>}
 
       {running && !result && (
-        <p className="mt-10 animate-pulse text-sm text-vayu-muted">
-          Checking… if the AI service was asleep this can take up to a minute.
-        </p>
+        <div aria-busy="true" className="flex flex-col gap-3">
+          <Loading label="Checking… if the AI service was asleep this can take up to a minute." />
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-20 rounded-2xl" />
+          ))}
+        </div>
       )}
-      {error && <p className="mt-10 text-sm text-red-500">Couldn’t run the checks: {error}</p>}
 
       {result && (
         <>
-          <p className={`mt-8 text-sm font-semibold ${failures ? "text-red-500" : "text-emerald-500"}`} role="status">
-            {failures ? `${failures} problem${failures > 1 ? "s" : ""} to fix` : "Everything is working."}
-          </p>
-          <ul className="mt-4 flex flex-col gap-3">
+          <ul className="flex flex-col gap-3">
             {result.checks.map((c) => {
-              const s = STYLE[c.status];
+              const look = LOOK[c.status];
               return (
-                <li key={c.id} className={`rounded-2xl border p-4 ${s.ring}`}>
+                <li key={c.id} className={cn("surface rounded-2xl p-4", c.status === "fail" && "border-vayu-danger/40")}>
                   <div className="flex items-start gap-3">
-                    <span className={`mt-0.5 w-4 text-center font-bold ${s.text}`} aria-hidden>
-                      {s.icon}
-                    </span>
+                    <look.Icon aria-hidden className={cn("mt-0.5 h-4 w-4 shrink-0", look.text)} />
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-vayu-fg">
-                        {c.label}
-                        <span className="sr-only"> — {c.status}</span>
-                      </p>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h2 className="text-sm font-semibold text-vayu-fg">{c.label}</h2>
+                        <Badge tone={look.tone}>{look.label}</Badge>
+                      </div>
                       <p className="mt-1 break-words text-sm text-vayu-muted">{c.detail}</p>
-                      {c.fix && (
-                        <p className="mt-2 break-words text-sm text-vayu-fg">
-                          <span className="font-semibold">Fix: </span>
-                          {c.fix}
-                        </p>
-                      )}
+                      {c.fix &&
+                        (canFix ? (
+                          <div className="mt-2 flex items-start gap-2 rounded-xl border border-vayu-border bg-vayu-inset/70 px-3 py-2">
+                            <p className="min-w-0 flex-1 break-words text-sm text-vayu-fg">
+                              <span className="font-semibold">Fix: </span>
+                              {c.fix}
+                            </p>
+                            <CopyButton value={c.fix} label="Copy fix" />
+                          </div>
+                        ) : (
+                          <Disclosure summary="How to fix it" className="mt-2">
+                            <p className="break-words">{c.fix}</p>
+                            <p className="mt-2 text-xs text-vayu-muted">This needs whoever deploys VAYU; share it with a workspace admin.</p>
+                          </Disclosure>
+                        ))}
                     </div>
                   </div>
                 </li>
               );
             })}
           </ul>
-          <p className="mt-6 text-xs text-vayu-muted">
-            {result.site} · checked {new Date(result.checkedAt).toLocaleTimeString()}
+          <p className="text-xs text-vayu-subtle">
+            {result.site} · checked <time dateTime={result.checkedAt}>{new Date(result.checkedAt).toLocaleTimeString()}</time>
           </p>
         </>
       )}
-    </main>
+    </div>
   );
 }
